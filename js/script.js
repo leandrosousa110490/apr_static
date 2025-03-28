@@ -516,130 +516,123 @@ function updateSummary() {
 }
 
 function updateExpenseChart() {
-    const expensesByCategory = {};
+    // Don't try to update if the chart container doesn't exist
+    const expenseChartCanvas = document.getElementById('expense-chart');
+    if (!expenseChartCanvas) return;
     
-    // Get current date for filtering
-    const currentMonth = 2; // March (0-indexed)
-    const currentYear = 2025;
-    const currentDate = new Date(currentYear, currentMonth, 15);
-    
-    // Calculate period start date based on filter
-    let periodStartDate = new Date(currentDate);
-    
-    switch(activePeriodFilter) {
-        case 'month':
-            // Set to beginning of current month
-            periodStartDate.setDate(1);
-            break;
-        case '6month':
-            // Go back 5 months (for a total of 6 months including current)
+    try {
+        // Get expense data by category
+        const categoryTotals = {};
+        const now = new Date();
+        
+        // Use the forced date for consistency
+        const forcedYear = 2025;
+        const forcedMonth = 2; // March (0-indexed)
+        const forcedDate = new Date(forcedYear, forcedMonth, 15);
+        
+        // Determine time period
+        let periodStartDate = new Date(forcedDate);
+        periodStartDate.setDate(1);
+        let months = 1;
+        
+        if (activePeriodFilter === '6month') {
             periodStartDate.setMonth(periodStartDate.getMonth() - 5);
-            break;
-        case 'year':
-            // Go back 11 months (for a total of 12 months including current)
+            months = 6;
+        } else if (activePeriodFilter === 'year') {
             periodStartDate.setMonth(periodStartDate.getMonth() - 11);
-            break;
-    }
-    
-    // Filter expenses based on time period
-    const filteredExpenses = budgetData.expenses.filter(expense => {
-        const expenseDate = new Date(expense.date);
-        return expenseDate >= periodStartDate && expenseDate <= currentDate;
-    });
-    
-    // Calculate totals by category using the filtered expenses
-    filteredExpenses.forEach(expense => {
-        let monthlyAmount = 0;
-        
-        // Calculate monthly amount based on frequency
-        switch(expense.frequency) {
-            case 'weekly':
-                monthlyAmount = expense.amount * 4.33;
-                break;
-            case 'bi-weekly':
-                monthlyAmount = expense.amount * 2.17;
-                break;
-            case 'monthly':
-                monthlyAmount = expense.amount;
-                break;
-            case 'annually':
-                monthlyAmount = expense.amount / 12;
-                break;
-            default:
-                monthlyAmount = expense.amount;
+            months = 12;
         }
         
-        // Calculate total amount based on the number of months in the period
-        let totalMonths = 1;
-        if (activePeriodFilter === '6month') totalMonths = 6;
-        if (activePeriodFilter === 'year') totalMonths = 12;
+        // Process expenses in batches to avoid freezing
+        const expensesToProcess = [...budgetData.expenses];
+        const batchSize = 50; // Process 50 expenses at a time
         
-        const categoryAmount = monthlyAmount * totalMonths;
-        expensesByCategory[expense.category] = (expensesByCategory[expense.category] || 0) + categoryAmount;
-    });
-    
-    // Sort categories by amount (descending)
-    const sortedCategories = Object.keys(expensesByCategory).sort((a, b) => 
-        expensesByCategory[b] - expensesByCategory[a]
-    );
-    
-    // Add time period to chart title if not displayed elsewhere
-    const chartTitle = document.querySelector('#expense-chart').closest('.card-body').querySelector('.card-title');
-    let titleText = 'Expense Distribution';
-    if (activePeriodFilter === 'month') {
-        titleText += ' (Monthly)';
-    } else if (activePeriodFilter === '6month') {
-        titleText += ' (6 Months)';
-    } else if (activePeriodFilter === 'year') {
-        titleText += ' (Yearly)';
-    }
-    chartTitle.textContent = titleText;
-    
-    // Check if there's any data to display
-    if (sortedCategories.length === 0) {
-        // No expense data for this period
-        // Clear the chart data
-        expenseChart.data.labels = [];
-        expenseChart.data.datasets[0].data = [];
-        
-        // Create a "No data" message if it doesn't exist yet
-        let chartContainer = document.getElementById('expense-chart').parentElement;
-        let noDataMsg = chartContainer.querySelector('.no-data-message');
-        
-        if (!noDataMsg) {
-            noDataMsg = document.createElement('div');
-            noDataMsg.className = 'no-data-message text-center text-muted mt-5';
-            noDataMsg.style.position = 'absolute';
-            noDataMsg.style.top = '50%';
-            noDataMsg.style.left = '50%';
-            noDataMsg.style.transform = 'translate(-50%, -50%)';
-            noDataMsg.innerHTML = '<i class="fas fa-chart-pie fa-2x mb-2"></i><br>No expense data';
-            chartContainer.style.position = 'relative';
-            chartContainer.appendChild(noDataMsg);
+        function processBatch() {
+            const batch = expensesToProcess.splice(0, batchSize);
+            
+            if (batch.length === 0) {
+                // All batches processed, update the chart
+                finishChartUpdate();
+                return;
+            }
+            
+            batch.forEach(expense => {
+                const expenseDate = new Date(expense.date);
+                
+                // Skip future expenses
+                if (expenseDate > forcedDate) return;
+                
+                // Skip expenses outside our period
+                if (expenseDate < periodStartDate) return;
+                
+                // Calculate monthly amount based on frequency
+                let monthlyAmount = 0;
+                
+                switch(expense.frequency) {
+                    case 'weekly':
+                        monthlyAmount = expense.amount * 4.33;
+                        break;
+                    case 'bi-weekly':
+                        monthlyAmount = expense.amount * 2.17;
+                        break;
+                    case 'monthly':
+                        monthlyAmount = expense.amount;
+                        break;
+                    case 'annually':
+                        monthlyAmount = expense.amount / 12;
+                        break;
+                    default:
+                        monthlyAmount = expense.amount;
+                }
+                
+                // Multiply by number of months in the period
+                const totalAmount = monthlyAmount * months;
+                
+                // Add to category total
+                if (categoryTotals[expense.category]) {
+                    categoryTotals[expense.category] += totalAmount;
+                } else {
+                    categoryTotals[expense.category] = totalAmount;
+                }
+            });
+            
+            // Process next batch using requestAnimationFrame to avoid UI blocking
+            window.requestAnimationFrame(processBatch);
         }
         
-        // Make chart transparent when no data
-        expenseChart.options.plugins.legend.display = false;
-    } else {
-        // We have data - remove no data message if it exists
-        let chartContainer = document.getElementById('expense-chart').parentElement;
-        let noDataMsg = chartContainer.querySelector('.no-data-message');
-        if (noDataMsg) {
-            noDataMsg.remove();
+        function finishChartUpdate() {
+            // Filter out categories with zero or negative values
+            const filteredCategories = Object.keys(categoryTotals)
+                .filter(category => categoryTotals[category] > 0);
+            
+            // Sort categories by amount (descending)
+            filteredCategories.sort((a, b) => categoryTotals[b] - categoryTotals[a]);
+            
+            // Prepare chart data
+            const chartLabels = filteredCategories;
+            const chartData = filteredCategories.map(category => categoryTotals[category]);
+            const chartColors = filteredCategories.map(category => categoryColors[category] || '#6c757d');
+            
+            // Update expense chart
+            expenseChart.data.labels = chartLabels;
+            expenseChart.data.datasets[0].data = chartData;
+            expenseChart.data.datasets[0].backgroundColor = chartColors;
+            expenseChart.update();
+            
+            // Also update comparison chart
+            const { totalIncome, totalExpenses } = calculateFinancials(forcedDate, activePeriodFilter);
+            updateComparisonChart(totalIncome, totalExpenses);
+            
+            // Update top expenses list
+            updateStatistics();
         }
         
-        // Update chart data
-        expenseChart.data.labels = sortedCategories;
-        expenseChart.data.datasets[0].data = sortedCategories.map(category => expensesByCategory[category]);
+        // Start batch processing
+        processBatch();
         
-        // Update chart colors based on category
-        expenseChart.data.datasets[0].backgroundColor = sortedCategories.map(category => categoryColors[category] || '#6c757d');
-        
-        // Make sure legend is displayed when we have data
-        expenseChart.options.plugins.legend.display = true;
+    } catch (error) {
+        console.error("Error updating expense chart:", error);
     }
-    
-    expenseChart.update();
 }
 
 function updateComparisonChart(totalIncome, totalExpenses) {
@@ -957,14 +950,54 @@ document.getElementById('reset-btn').addEventListener('click', function() {
     confirmModal.show();
 });
 
-// Sample data button functionality
-document.getElementById('sample-data-btn').addEventListener('click', function() {
-    // Add sample data
-    addSampleData();
-    updateIncomeList();
-    updateExpenseList();
-    updateSummary();
-    updateExpenseChart();
+// Load data when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Debounce function to prevent excessive calculations
+    function debounce(func, wait) {
+        let timeout;
+        return function(...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), wait);
+        };
+    }
+    
+    // Original load data call with error handling
+    try {
+        loadData();
+        
+        // Check for pending loan expenses from loan calculator page
+        checkPendingLoanExpenses();
+        
+        // Set up the time period filter buttons
+        const timeFilterButtons = document.querySelectorAll('.time-filter');
+        timeFilterButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                // Update active button
+                timeFilterButtons.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Update the active filter
+                activePeriodFilter = this.dataset.period;
+                
+                // Use requestAnimationFrame for smoother UI updates
+                window.requestAnimationFrame(() => {
+                    // Update the summary and all charts/statistics
+                    updateSummary();
+                    
+                    // Log the change
+                    console.log(`Time period filter changed to: ${activePeriodFilter}`);
+                });
+            });
+        });
+        
+        // Update all UI elements with loaded data
+        updateIncomeList();
+        updateExpenseList();
+        updateSummary();
+    } catch (error) {
+        console.error("Error initializing budget app:", error);
+        showToast("Error loading data. Please try refreshing the page.");
+    }
 });
 
 // Save data to localStorage
@@ -1075,96 +1108,119 @@ function loadData() {
     document.getElementById(formId).addEventListener('submit', saveData);
 });
 
-// Load data when page loads
-document.addEventListener('DOMContentLoaded', function() {
-    // Original load data call
-    loadData();
+// Loan Calculator Functions
+/**
+ * Calculate monthly loan payment and update the UI
+ */
+function calculateLoan() {
+    // Get form values
+    const loanAmount = parseFloat(document.getElementById('loan-amount').value);
+    const interestRate = parseFloat(document.getElementById('interest-rate').value) / 100 / 12; // Monthly interest rate
+    const loanTerm = parseInt(document.getElementById('loan-term').value) * 12; // Months
     
-    // Set up the time period filter buttons
-    const timeFilterButtons = document.querySelectorAll('.time-filter');
-    timeFilterButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            // Update active button
-            timeFilterButtons.forEach(btn => btn.classList.remove('active'));
-            this.classList.add('active');
-            
-            // Update the active filter
-            activePeriodFilter = this.dataset.period;
-            
-            // Update the summary and all charts/statistics
-            updateSummary();
-            
-            // Log the change
-            console.log(`Time period filter changed to: ${activePeriodFilter}`);
-        });
-    });
+    // Calculate monthly payment using formula: P = (r*PV) / (1 - (1+r)^-n)
+    // Where:
+    // P = Monthly Payment
+    // r = Monthly Interest Rate (annual rate / 12)
+    // PV = Loan Amount
+    // n = Loan Term in months
     
-    // Check if there's any data - if not, add a small bit of sample data
-    if (budgetData.expenses.length === 0 && budgetData.incomes.length === 0) {
-        addSampleData();
-        updateIncomeList();
-        updateExpenseList();
-        updateSummary();
-        updateExpenseChart();
+    let monthlyPayment = 0;
+    
+    if (interestRate === 0) {
+        // Simple division if interest rate is zero
+        monthlyPayment = loanAmount / loanTerm;
+    } else {
+        // Standard loan formula
+        monthlyPayment = (interestRate * loanAmount) / (1 - Math.pow(1 + interestRate, -loanTerm));
     }
-});
-
-// Add sample data function for testing
-function addSampleData() {
-    console.log("Adding sample data for testing");
     
-    // Use forced March 2025 date
+    // Calculate total payment and interest
+    const totalPayment = monthlyPayment * loanTerm;
+    const totalInterest = totalPayment - loanAmount;
+    
+    // Update UI
+    document.getElementById('monthly-payment').textContent = formatCurrency(monthlyPayment);
+    document.getElementById('total-payment').textContent = formatCurrency(totalPayment);
+    document.getElementById('total-interest').textContent = formatCurrency(totalInterest);
+}
+
+/**
+ * Add the calculated monthly loan payment as an expense in the budget
+ */
+function addLoanPaymentAsExpense() {
+    const monthlyPayment = parseFloat(document.getElementById('monthly-payment').textContent.replace(/[$,]/g, ''));
+    const loanAmount = parseFloat(document.getElementById('loan-amount').value);
+    const interestRate = parseFloat(document.getElementById('interest-rate').value);
+    const loanTerm = parseInt(document.getElementById('loan-term').value);
+    
+    // Use the current date for the new expense
     const forcedYear = 2025;
     const forcedMonth = 2; // March (0-indexed)
     const forcedDate = new Date(forcedYear, forcedMonth, 15);
     const dateString = forcedDate.toISOString().split('T')[0];
     
-    // Add sample income
-    const sampleIncome = {
-        id: Date.now(),
-        source: "Sample Salary",
-        amount: 3000,
-        date: dateString,
-        category: "Salary",
-        frequency: "monthly"
-    };
-    budgetData.incomes.push(sampleIncome);
+    // Create expense name with loan details
+    const expenseName = `Loan Payment ($${loanAmount} @ ${interestRate}% for ${loanTerm} years)`;
     
-    // Add sample expenses
-    const sampleExpenses = [
-        {
-            id: Date.now() + 1,
-            name: "Rent",
-            amount: 1200,
-            date: dateString,
-            category: "Housing",
-            frequency: "monthly"
-        },
-        {
-            id: Date.now() + 2,
-            name: "Groceries",
-            amount: 400,
-            date: dateString,
-            category: "Food",
-            frequency: "monthly"
-        },
-        {
-            id: Date.now() + 3,
-            name: "Car Payment",
-            amount: 300,
-            date: dateString,
-            category: "Transportation",
-            frequency: "monthly"
+    // Add as a monthly expense
+    addExpense(expenseName, monthlyPayment, dateString, 'Housing', 'monthly');
+    
+    // Update summary
+    updateSummary();
+    
+    // Show success message
+    showToast("Loan payment added as monthly expense!");
+    
+    // Close the modal
+    const loanCalculatorModal = bootstrap.Modal.getInstance(document.getElementById('loanCalculatorModal'));
+    loanCalculatorModal.hide();
+}
+
+/**
+ * Check for pending loan expenses from loan calculator page
+ */
+function checkPendingLoanExpenses() {
+    const pendingExpenses = localStorage.getItem('pendingExpenses');
+    
+    if (pendingExpenses) {
+        try {
+            const expensesList = JSON.parse(pendingExpenses);
+            
+            if (Array.isArray(expensesList) && expensesList.length > 0) {
+                expensesList.forEach(expense => {
+                    // Use the forced date for consistency
+                    const forcedYear = 2025;
+                    const forcedMonth = 2; // March (0-indexed)
+                    const forcedDate = new Date(forcedYear, forcedMonth, 15);
+                    const dateString = forcedDate.toISOString().split('T')[0];
+                    
+                    // Validate expense object before adding
+                    if (expense && expense.name && !isNaN(expense.amount) && expense.amount > 0) {
+                        // Add expense to the budget
+                        addExpense(expense.name, expense.amount, dateString, 
+                                  expense.category || 'Housing', expense.frequency || 'monthly');
+                    }
+                });
+                
+                // Clear pending expenses
+                localStorage.removeItem('pendingExpenses');
+                
+                // Update UI
+                window.requestAnimationFrame(() => {
+                    updateSummary();
+                    updateExpenseList();
+                });
+                
+                // Show notification
+                showToast(`Added ${expensesList.length} loan payment(s) as expenses`);
+            }
+        } catch (error) {
+            console.error('Error processing pending loan expenses:', error);
+            localStorage.removeItem('pendingExpenses');
+            showToast("Error processing loan expenses. Please try again.");
         }
-    ];
-    
-    budgetData.expenses.push(...sampleExpenses);
-    
-    // Save the sample data
-    saveData();
-    
-    // Show a toast notification
-    showToast("Sample data added for testing");
+    }
 }
 
 // New helper function to calculate financials based on time period
@@ -1283,206 +1339,173 @@ function calculateFinancials(baseDate, periodFilter) {
 
 // Update table breakdown function
 function updateTableBreakdown() {
-    const tableContainer = document.getElementById('table-breakdown-container');
-    tableContainer.innerHTML = '';
+    const breakdownContainer = document.getElementById('table-breakdown-container');
+    if (!breakdownContainer) return;
     
-    // First check if there's any data at all
-    if (budgetData.incomes.length === 0 && budgetData.expenses.length === 0) {
-        tableContainer.innerHTML = '<div class="text-center text-muted">Enter income or expenses to see monthly breakdown</div>';
-        return; // Exit early if no data
-    }
-    
-    // Force current date to be March 2025
-    const currentMonth = 2; // March (0-indexed)
-    const currentYear = 2025;
-    const startDate = new Date(currentYear, currentMonth, 1);
-    
-    // Create an array to hold 12 months of data
-    const monthlyData = [];
-    
-    // Set title based on active period filter
-    let tableTitle = 'Monthly Breakdown';
-    let months = 12; // Default to showing 12 months
-    
-    if (activePeriodFilter === 'month') {
-        tableTitle = '1-Month Breakdown';
-        months = 1;
-    } else if (activePeriodFilter === '6month') {
-        tableTitle = '6-Month Breakdown';
-        months = 6;
-    } else {
-        tableTitle = '12-Month Breakdown';
-    }
-    
-    // Generate months based on the active filter
-    for (let i = 0; i < months; i++) {
-        const targetDate = new Date(startDate);
-        targetDate.setMonth(targetDate.getMonth() + i);
+    try {
+        // Use the forced date for consistency
+        const forcedYear = 2025;
+        const forcedMonth = 2; // March (0-indexed)
+        const baseDate = new Date(forcedYear, forcedMonth, 15);
         
-        const monthKey = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}`;
-        const monthName = targetDate.toLocaleDateString(undefined, { month: 'short' });
-        const yearNumber = targetDate.getFullYear();
-        const isCurrentMonth = i === 0; // First month is current month (March 2025)
+        // Set default time period
+        let months = 1;
+        if (activePeriodFilter === '6month') months = 6;
+        if (activePeriodFilter === 'year') months = 12;
         
-        monthlyData.push({
-            key: monthKey,
-            month: monthName,
-            year: yearNumber,
-            income: 0,
-            expense: 0,
-            balance: 0,
-            isCurrentMonth: isCurrentMonth
-        });
-    }
-    
-    // Calculate monthly amount for each income
-    budgetData.incomes.forEach(income => {
-        let monthlyAmount = 0;
+        // Prep data in memory before DOM manipulation
+        let monthlyData = [];
+        let totalBalance = 0;
+        let totalIncome = 0;
+        let totalExpense = 0;
         
-        // Calculate the monthly amount based on frequency
-        switch(income.frequency) {
-            case 'weekly':
-                monthlyAmount = income.amount * 4.33;
-                break;
-            case 'bi-weekly':
-                monthlyAmount = income.amount * 2.17;
-                break;
-            case 'monthly':
-                monthlyAmount = income.amount;
-                break;
-            case 'annually':
-                monthlyAmount = income.amount / 12;
-                break;
-            default:
-                monthlyAmount = income.amount;
+        // Calculate period start date
+        let periodStartDate = new Date(baseDate);
+        periodStartDate.setDate(1);
+        
+        if (activePeriodFilter === '6month') {
+            periodStartDate.setMonth(periodStartDate.getMonth() - 5);
+        } else if (activePeriodFilter === 'year') {
+            periodStartDate.setMonth(periodStartDate.getMonth() - 11);
         }
         
-        // Add this income to all months
-        monthlyData.forEach(month => {
-            month.income += monthlyAmount;
-        });
-    });
-    
-    // Calculate monthly amount for each expense
-    budgetData.expenses.forEach(expense => {
-        let monthlyAmount = 0;
-        
-        // Calculate the monthly amount based on frequency
-        switch(expense.frequency) {
-            case 'weekly':
-                monthlyAmount = expense.amount * 4.33;
-                break;
-            case 'bi-weekly':
-                monthlyAmount = expense.amount * 2.17;
-                break;
-            case 'monthly':
-                monthlyAmount = expense.amount;
-                break;
-            case 'annually':
-                monthlyAmount = expense.amount / 12;
-                break;
-            default:
-                monthlyAmount = expense.amount;
+        // Generate summary for each month in our period
+        for (let i = 0; i < months; i++) {
+            const currentMonth = new Date(periodStartDate);
+            currentMonth.setMonth(currentMonth.getMonth() + i);
+            
+            // Calculate income for this month
+            const monthlyIncome = budgetData.incomes.reduce((sum, income) => {
+                const incomeDate = new Date(income.date);
+                
+                // Skip incomes outside our range
+                if (incomeDate > baseDate) return sum;
+                if (incomeDate > currentMonth) return sum;
+                
+                let amount = 0;
+                
+                switch(income.frequency) {
+                    case 'weekly':
+                        amount = income.amount * 4.33;  // Approx weeks per month
+                        break;
+                    case 'bi-weekly':
+                        amount = income.amount * 2.17;  // Approx bi-weekly periods per month
+                        break;
+                    case 'monthly':
+                        amount = income.amount;
+                        break;
+                    case 'annually':
+                        amount = income.amount / 12;   // Distribute annual amount evenly
+                        break;
+                    default:
+                        amount = income.amount;
+                }
+                
+                return sum + amount;
+            }, 0);
+            
+            // Calculate expenses for this month
+            const monthlyExpense = budgetData.expenses.reduce((sum, expense) => {
+                const expenseDate = new Date(expense.date);
+                
+                // Skip expenses outside our range
+                if (expenseDate > baseDate) return sum;
+                if (expenseDate > currentMonth) return sum;
+                
+                let amount = 0;
+                
+                switch(expense.frequency) {
+                    case 'weekly':
+                        amount = expense.amount * 4.33;
+                        break;
+                    case 'bi-weekly':
+                        amount = expense.amount * 2.17;
+                        break;
+                    case 'monthly':
+                        amount = expense.amount;
+                        break;
+                    case 'annually':
+                        amount = expense.amount / 12;
+                        break;
+                    default:
+                        amount = expense.amount;
+                }
+                
+                return sum + amount;
+            }, 0);
+            
+            const monthlyBalance = monthlyIncome - monthlyExpense;
+            
+            // Add to monthly data array
+            monthlyData.push({
+                month: currentMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' }),
+                income: monthlyIncome,
+                expense: monthlyExpense,
+                balance: monthlyBalance
+            });
+            
+            // Update totals
+            totalIncome += monthlyIncome;
+            totalExpense += monthlyExpense;
         }
         
-        // Add this expense to all months
-        monthlyData.forEach(month => {
-            month.expense += monthlyAmount;
-        });
-    });
-    
-    // Calculate balance for each month and total
-    let totalIncome = 0;
-    let totalExpense = 0;
-    
-    monthlyData.forEach(month => {
-        month.balance = month.income - month.expense;
-        totalIncome += month.income;
-        totalExpense += month.expense;
-    });
-    
-    const totalBalance = totalIncome - totalExpense;
-    
-    // Create table header with title
-    const tableHeader = document.createElement('div');
-    tableHeader.className = 'd-flex justify-content-between align-items-center mb-2';
-    tableHeader.innerHTML = `
-        <h6 class="mb-0">${tableTitle}</h6>
-    `;
-    tableContainer.appendChild(tableHeader);
-    
-    // Create a responsive table
-    const table = document.createElement('div');
-    table.className = 'table-responsive';
-    
-    // Format money with commas
-    function formatMoney(amount) {
-        return amount.toLocaleString('en-US', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        });
-    }
-    
-    let tableHTML = `
-        <table class="table table-sm table-hover">
-            <thead class="table-light">
-                <tr>
-                    <th scope="col">Month</th>
-                    <th scope="col" class="text-end">Income</th>
-                    <th scope="col" class="text-end">Expenses</th>
-                    <th scope="col" class="text-end">Balance</th>
-                </tr>
-            </thead>
-            <tbody>
-    `;
-    
-    // Add each month as a row
-    monthlyData.forEach(month => {
-        tableHTML += `
-            <tr ${month.isCurrentMonth ? 'class="current-month"' : ''}>
-                <td>${month.month} ${month.year}</td>
-                <td class="text-end text-success">$${formatMoney(month.income)}</td>
-                <td class="text-end text-danger">$${formatMoney(month.expense)}</td>
-                <td class="text-end ${month.balance >= 0 ? 'text-success' : 'text-danger'}">$${formatMoney(month.balance)}</td>
-            </tr>
+        totalBalance = totalIncome - totalExpense;
+        
+        // Build HTML table
+        const tableHTML = `
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>Period</th>
+                        <th class="text-end">Income</th>
+                        <th class="text-end">Expenses</th>
+                        <th class="text-end">Balance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${monthlyData.map(data => `
+                        <tr>
+                            <td>${data.month}</td>
+                            <td class="text-end text-success">$${formatMoney(data.income)}</td>
+                            <td class="text-end text-danger">$${formatMoney(data.expense)}</td>
+                            <td class="text-end ${data.balance >= 0 ? 'text-success' : 'text-danger'}">
+                                ${data.balance >= 0 ? '+' : ''}$${formatMoney(Math.abs(data.balance))}
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+                <tfoot class="table-light fw-bold">
+                    <tr>
+                        <td>Total (${monthlyData.length} entries)</td>
+                        <td class="text-end text-success">$${formatMoney(totalIncome)}</td>
+                        <td class="text-end text-danger">$${formatMoney(totalExpense)}</td>
+                        <td class="text-end ${totalBalance >= 0 ? 'text-success' : 'text-danger'}">
+                            ${totalBalance >= 0 ? '+' : ''}$${formatMoney(Math.abs(totalBalance))}
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
         `;
-    });
-    
-    // Add totals row
-    tableHTML += `
-            </tbody>
-            <tfoot class="table-light fw-bold">
-                <tr>
-                    <td>${months > 1 ? (months === 6 ? '6-Month' : 'Annual') : 'Monthly'} Total</td>
-                    <td class="text-end text-success">$${formatMoney(totalIncome)}</td>
-                    <td class="text-end text-danger">$${formatMoney(totalExpense)}</td>
-                    <td class="text-end ${totalBalance >= 0 ? 'text-success' : 'text-danger'}">$${formatMoney(totalBalance)}</td>
-                </tr>
-            </tfoot>
-        </table>
-    `;
-    
-    table.innerHTML = tableHTML;
-    tableContainer.appendChild(table);
-    
-    // Add a small note about the calculation
-    const note = document.createElement('div');
-    note.className = 'small text-muted text-center mt-2';
-    
-    if (months === 1) {
-        note.textContent = 'Showing recurring monthly income and expenses for current month';
-    } else if (months === 6) {
-        note.textContent = 'Showing recurring monthly income and expenses projected over 6 months';
-    } else {
-        note.textContent = 'Showing recurring monthly income and expenses projected over 12 months';
+        
+        // Use a single DOM update
+        breakdownContainer.innerHTML = tableHTML;
+        
+    } catch (error) {
+        console.error("Error updating table breakdown:", error);
+        breakdownContainer.innerHTML = '<div class="alert alert-danger">Error generating breakdown table</div>';
     }
     
-    tableContainer.appendChild(note);
+    // Helper function for formatting money values
+    function formatMoney(amount) {
+        return amount.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+    }
 }
 
 // Update combined transactions table
 function updateCombinedTransactions() {
     const transactionsContainer = document.getElementById('combined-transactions-container');
+    if (!transactionsContainer) return;
+    
     transactionsContainer.innerHTML = '';
     
     // First check if there's any data at all
@@ -1598,17 +1621,6 @@ function updateCombinedTransactions() {
                 case 'monthly': return 'Monthly';
                 case 'annually': return 'Annually';
                 default: return 'Monthly';
-            }
-        }
-        
-        // Get monthly amount based on frequency
-        function getMonthlyAmount(amount, frequency) {
-            switch(frequency) {
-                case 'weekly': return amount * 4.33;
-                case 'bi-weekly': return amount * 2.17;
-                case 'monthly': return amount;
-                case 'annually': return amount / 12;
-                default: return amount;
             }
         }
         
