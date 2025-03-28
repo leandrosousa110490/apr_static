@@ -511,9 +511,6 @@ function updateSummary() {
     updateExpenseChart();
     updateStatistics();
     
-    // Update table breakdown
-    updateTableBreakdown();
-    
     // Update combined transactions table
     updateCombinedTransactions();
 }

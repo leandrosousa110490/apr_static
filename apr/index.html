@@ -189,17 +189,7 @@
                         <div class="mt-4">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <h6 class="mb-0">Expense List</h6>
-                                <div class="dropdown">
-                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                        <i class="fas fa-filter me-1"></i>Filter
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end">
-                                        <li><a class="dropdown-item expense-filter" data-filter="all" href="#">All</a></li>
-                                        <li><a class="dropdown-item expense-filter" data-filter="Housing" href="#">Housing</a></li>
-                                        <li><a class="dropdown-item expense-filter" data-filter="Food" href="#">Food</a></li>
-                                        <li><a class="dropdown-item expense-filter" data-filter="Transportation" href="#">Transportation</a></li>
-                                    </ul>
-                                </div>
+                                
                             </div>
                             <ul id="expense-list" class="list-group expense-items"></ul>
                         </div>
@@ -292,18 +282,6 @@
             </div>
         </div>
         
-        <!-- Monthly Breakdown Table -->
-        <div class="row mt-4">
-            <div class="col-12">
-                <div class="card shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title">Monthly Comparison</h5>
-                        <div id="table-breakdown-container" class="table-breakdown-container"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Combined Transactions Table -->
         <div class="row mt-4">
             <div class="col-12">
@@ -354,7 +332,5 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Custom JavaScript -->
     <script src="js/script.js"></script>
-    <!-- Table Breakdown Component -->
-    <script src="js/table-breakdown.js"></script>
 </body>
 </html>
