@@ -8,6 +8,8 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('nav-calculator')?.classList.add('active');
     } else if (currentPage === 'budget.html') {
         document.getElementById('nav-budget')?.classList.add('active');
+    } else if (currentPage === 'apr_checker.html') {
+        document.getElementById('nav-apr')?.classList.add('active');
     }
 
     // --- Dark Mode Toggle --- 
