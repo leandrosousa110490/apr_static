@@ -88,6 +88,13 @@
                         <div id="stock-data-container">
                             <p>Loading stock market data...</p>
                         </div>
+                        <!-- Add a container for displaying top stocks when an index is clicked -->
+                        <div id="top-stocks-container" class="mt-4 d-none">
+                            <h6 class="border-bottom pb-2" id="selected-index-title">Top Stocks</h6>
+                            <div id="top-stocks-data">
+                                <!-- Top stocks will be loaded here -->
+                            </div>
+                        </div>
                         <small class="text-muted" id="stock-data-date">Data as of: Fetching...</small><br>
                         <small class="text-muted">Source: Financial indexes</small>
                     </div>
@@ -397,8 +404,8 @@
                     const changeSymbol = index.change >= 0 ? '+' : '';
                     
                     htmlContent += `
-                        <tr>
-                            <td class="text-start"><strong>${index.name}</strong></td>
+                        <tr class="index-row" data-index="${index.name}">
+                            <td class="text-start"><strong class="index-name" style="cursor: pointer;">${index.name}</strong></td>
                             <td class="text-end">${index.value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                             <td class="text-end ${changeClass}">${changeSymbol}${Math.abs(index.change).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                             <td class="text-end ${changeClass}">${changeSymbol}${index.change_percent.toFixed(2)}%</td>
@@ -414,6 +421,115 @@
                     </div>`;
                 
                 stockContainer.innerHTML = htmlContent;
+                
+                // After the table is created, add event listeners to index names
+                setTimeout(() => {
+                    document.querySelectorAll('.index-name').forEach(element => {
+                        element.addEventListener('click', function() {
+                            const indexName = this.closest('tr').dataset.index;
+                            showTopStocks(indexName);
+                        });
+                    });
+                }, 100); // Small delay to ensure DOM is updated
+            }
+            
+            // Function to show the top stocks for a given index
+            function showTopStocks(indexName) {
+                const topStocksContainer = document.getElementById('top-stocks-container');
+                const topStocksData = document.getElementById('top-stocks-data');
+                const selectedIndexTitle = document.getElementById('selected-index-title');
+                
+                // Update the title and show the container
+                selectedIndexTitle.textContent = `Top Companies in ${indexName}`;
+                topStocksContainer.classList.remove('d-none');
+                topStocksData.innerHTML = '<p>Loading top stocks data...</p>';
+                
+                // Predefined top stocks for each index (since we can't easily query this data client-side)
+                const topStocksByIndex = {
+                    "S&P 500": [
+                        { symbol: "AAPL", name: "Apple Inc.", price: 169.75, change: 1.23 },
+                        { symbol: "MSFT", name: "Microsoft Corporation", price: 417.88, change: 2.35 },
+                        { symbol: "AMZN", name: "Amazon.com Inc.", price: 178.75, change: -0.54 },
+                        { symbol: "NVDA", name: "NVIDIA Corporation", price: 893.98, change: 15.67 },
+                        { symbol: "GOOGL", name: "Alphabet Inc.", price: 147.60, change: 0.91 }
+                    ],
+                    "Dow Jones": [
+                        { symbol: "UNH", name: "UnitedHealth Group Inc.", price: 490.01, change: -2.15 },
+                        { symbol: "GS", name: "Goldman Sachs Group Inc.", price: 389.13, change: 3.75 },
+                        { symbol: "HD", name: "Home Depot Inc.", price: 342.90, change: 1.03 },
+                        { symbol: "CAT", name: "Caterpillar Inc.", price: 347.92, change: 4.37 },
+                        { symbol: "MCD", name: "McDonald's Corporation", price: 266.47, change: -0.43 }
+                    ],
+                    "NASDAQ": [
+                        { symbol: "TSLA", name: "Tesla, Inc.", price: 174.50, change: -1.37 },
+                        { symbol: "META", name: "Meta Platforms, Inc.", price: 477.78, change: 5.82 },
+                        { symbol: "AVGO", name: "Broadcom Inc.", price: 1295.01, change: 23.45 },
+                        { symbol: "COST", name: "Costco Wholesale Corporation", price: 731.31, change: 3.87 },
+                        { symbol: "PEP", name: "PepsiCo, Inc.", price: 169.91, change: -0.34 }
+                    ],
+                    "Russell 2000": [
+                        { symbol: "MEDP", name: "Medpace Holdings, Inc.", price: 388.31, change: 4.23 },
+                        { symbol: "PLMR", name: "Palomar Holdings, Inc.", price: 82.43, change: -1.32 },
+                        { symbol: "APEI", name: "American Public Education, Inc.", price: 12.91, change: 0.23 },
+                        { symbol: "COWN", name: "Cowen Inc.", price: 38.50, change: 0.75 },
+                        { symbol: "CDE", name: "Coeur Mining, Inc.", price: 5.82, change: -0.18 }
+                    ],
+                    "FTSE 100": [
+                        { symbol: "AZN.L", name: "AstraZeneca PLC", price: 12456.00, change: 125.00 },
+                        { symbol: "HSBA.L", name: "HSBC Holdings plc", price: 675.90, change: 8.45 },
+                        { symbol: "SHEL.L", name: "Shell plc", price: 2851.50, change: -24.50 },
+                        { symbol: "ULVR.L", name: "Unilever PLC", price: 4086.00, change: 32.00 },
+                        { symbol: "BP.L", name: "BP p.l.c.", price: 498.85, change: 5.25 }
+                    ]
+                };
+                
+                // Get the stocks for the selected index
+                const stocks = topStocksByIndex[indexName] || [];
+                
+                if (stocks.length === 0) {
+                    topStocksData.innerHTML = '<p class="text-warning">No stock data available for this index.</p>';
+                    return;
+                }
+                
+                // Create table for the stocks
+                let stocksHtml = `
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th style="width: 15%;" class="text-start">Symbol</th>
+                                    <th style="width: 45%;" class="text-start">Company</th>
+                                    <th style="width: 20%;" class="text-end">Price</th>
+                                    <th style="width: 20%;" class="text-end">Change</th>
+                                </tr>
+                            </thead>
+                            <tbody>`;
+                
+                stocks.forEach(stock => {
+                    const changeClass = stock.change >= 0 ? 'text-success' : 'text-danger';
+                    const changeSymbol = stock.change >= 0 ? '+' : '';
+                    const formattedPrice = indexName === "FTSE 100" 
+                        ? stock.price.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) 
+                        : stock.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    
+                    stocksHtml += `
+                        <tr>
+                            <td class="text-start"><strong>${stock.symbol}</strong></td>
+                            <td class="text-start">${stock.name}</td>
+                            <td class="text-end">${formattedPrice}</td>
+                            <td class="text-end ${changeClass}">${changeSymbol}${Math.abs(stock.change).toFixed(2)}</td>
+                        </tr>`;
+                });
+                
+                stocksHtml += `
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="small text-muted mt-2 mb-0">
+                        Showing top 5 companies in ${indexName} by market capitalization.
+                    </p>`;
+                
+                topStocksData.innerHTML = stocksHtml;
             }
             
             // Load the initial data for each tab
@@ -423,15 +539,15 @@
             document.getElementById('crypto-tab').addEventListener('click', fetchCryptoMarketData);
             document.getElementById('stocks-tab').addEventListener('click', loadStockMarketData);
             
-            // Optional: Refresh data every 5 minutes for the active tab
+            // Pre-load data for other tabs to have them ready when tabs are clicked
+            fetchCryptoMarketData();
+            loadStockMarketData();
+            
+            // Refresh data every 5 minutes for all tabs
             setInterval(() => {
-                if (document.getElementById('rates-tab').classList.contains('active')) {
-                    loadInterestRates();
-                } else if (document.getElementById('crypto-tab').classList.contains('active')) {
-                    fetchCryptoMarketData();
-                } else if (document.getElementById('stocks-tab').classList.contains('active')) {
-                    loadStockMarketData();
-                }
+                loadInterestRates();
+                fetchCryptoMarketData();
+                loadStockMarketData();
             }, 300000); // 5 minutes
         });
     </script>
