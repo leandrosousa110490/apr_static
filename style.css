@@ -1,0 +1,83 @@
+/* Keep basic reset for good measure, though Bootstrap handles much of it */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    /* background-color: #f8f9fa;  Bootstrap default body color is fine */
+    /* padding-bottom: 60px; Footer height handled by flex */
+}
+
+/* Navbar Customization (Optional) */
+.navbar-brand {
+    font-weight: bold;
+}
+
+/* Ensure main content takes available space */
+main {
+    /* max-width: 960px; /* Let Bootstrap container handle width */ 
+    /* margin: 20px auto; /* Bootstrap container handles margin */
+    /* padding: 20px; /* Bootstrap container handles padding */
+    /* background: #fff; /* Card backgrounds handle this */
+    /* box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Bootstrap shadow classes used */
+    /* border-radius: 8px; /* Bootstrap card/rounded classes used */
+}
+
+/* Card Header Styles (Example Override) */
+.card-header {
+    font-weight: bold;
+}
+
+/* Input Group Icon Alignment (Sometimes needed) */
+.input-group-text {
+    width: 40px; /* Adjust as needed for icon alignment */
+    justify-content: center;
+}
+
+/* Budget list item icons */
+#income-list .fas, #expense-list .fas {
+    margin-right: 8px;
+}
+
+/* Chart Container adjustments */
+.chart-container canvas {
+    max-width: 100%; /* Ensure canvas is responsive within its container */
+}
+
+/* Remove old form/button/list styles now handled by Bootstrap */
+/* 
+.form-group { ... } 
+.form-group label { ... }
+.form-group input[...] { ... }
+button { ... }
+button:hover { ... }
+button[type="button"] { ... } 
+#calculator-result, #income-list, #expense-list { ... }
+#income-list li, #expense-list li { ... }
+#income-list li:last-child, #expense-list li:last-child { ... }
+#income-list button, #expense-list button { ... }
+#budget-form p { ... } 
+footer { ... } -> Handled by body flex and Bootstrap classes
+*/
+
+/* Keep existing error message style if needed, or use Bootstrap's form-text */
+.error-message { /* Can likely be removed if form-text used consistently */
+   /* color: #d9534f; */
+   /* font-size: 0.9em; */
+   /* display: block; */
+   /* margin-top: -0.3rem; */
+   /* margin-bottom: 0.5rem; */
+   /* min-height: 1em; */
+}
+
+/* Keep Responsive Design rules only if they add something Bootstrap doesn't cover */
+@media (max-width: 768px) {
+   /* Most rules here are likely handled by Bootstrap grid/nav */
+   /* Example: Maybe force chart height differently? */
+   /* .chart-container { height: 250px; } */
+}
+
+@media (max-width: 480px) {
+     /* Most rules here are likely handled by Bootstrap */
+} 
