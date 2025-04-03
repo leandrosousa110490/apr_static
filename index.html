@@ -74,61 +74,96 @@
             </div>
         </div>
 
-        <!-- Financial Markets Section with Tabs -->
+        <!-- Financial Markets Section (now only Interest Rates) -->
         <div class="card mb-4 shadow-sm">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-chart-line"></i> Financial Markets Overview</h5>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-chart-line"></i> Financial Interest Rates</h5>
             </div>
             <div class="card-body">
-                <!-- Navigation tabs for different market data -->
-                <ul class="nav nav-tabs mb-3" id="marketTabs" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="rates-tab" data-bs-toggle="tab" data-bs-target="#rates-content" type="button" role="tab" aria-controls="rates-content" aria-selected="true">Interest Rates</button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="crypto-tab" data-bs-toggle="tab" data-bs-target="#crypto-content" type="button" role="tab" aria-controls="crypto-content" aria-selected="false">Cryptocurrency</button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="stocks-tab" data-bs-toggle="tab" data-bs-target="#stocks-content" type="button" role="tab" aria-controls="stocks-content" aria-selected="false">Stock Market</button>
-                    </li>
-                </ul>
-
-                <!-- Tab content -->
-                <div class="tab-content" id="marketTabsContent">
-                    <!-- Interest Rates Tab -->
-                    <div class="tab-pane fade show active" id="rates-content" role="tabpanel" aria-labelledby="rates-tab">
-                        <div id="interest-rates-container">
-                            <p>Loading interest rates...</p>
-                        </div>
-                        <small class="text-muted" id="interest-rates-date">Data as of: Fetching...</small><br>
-                        <small class="text-muted">Source: Averaged market rates (Updated weekly)</small>
-                    </div>
-
-                    <!-- Cryptocurrency Tab -->
-                    <div class="tab-pane fade" id="crypto-content" role="tabpanel" aria-labelledby="crypto-tab">
-                        <div id="crypto-data-container">
-                            <p>Loading cryptocurrency data...</p>
-                        </div>
-                        <small class="text-muted" id="crypto-data-date">Data as of: Fetching...</small><br>
-                        <small class="text-muted">Source: CoinGecko API</small>
-                    </div>
-
-                    <!-- Stock Market Tab -->
-                    <div class="tab-pane fade" id="stocks-content" role="tabpanel" aria-labelledby="stocks-tab">
-                        <div id="stock-data-container">
-                            <p>Loading stock market data...</p>
-                        </div>
-                        <!-- Add a container for displaying top stocks when an index is clicked -->
-                        <div id="top-stocks-container" class="mt-4 d-none">
-                            <h6 class="border-bottom pb-2" id="selected-index-title">Top Stocks</h6>
-                            <div id="top-stocks-data">
-                                <!-- Top stocks will be loaded here -->
+                <!-- Navigation tabs - Removed Crypto and Stock tabs -->
+                <!-- Interest Rates content (now directly shown, no tabs) -->
+                <div id="interest-rates-container">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <h6><i class="fas fa-info-circle me-2"></i>About Financial Rates</h6>
+                                <p class="mb-0">Interest rates impact everything from mortgages and loans to savings accounts and investments. Below are official sources where you can access up-to-date financial rate information.</p>
+                            </div>
+                            
+                            <h5 class="mt-4 border-bottom pb-2">Official Rate Sources</h5>
+                            
+                            <div class="list-group mb-4">
+                                <a href="https://home.treasury.gov/resource-center/data-chart-center/interest-rates" target="_blank" class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between align-items-center">
+                                        <h6 class="mb-1"><i class="fas fa-landmark me-2"></i>U.S. Treasury</h6>
+                                        <span class="badge bg-primary">Official</span>
+                                    </div>
+                                    <p class="mb-1">Daily Treasury PAR yield curve rates, Treasury bill rates, and long-term rates including Treasury Inflation-Protected Securities (TIPS).</p>
+                                    <small class="text-muted">Updated daily at approximately 4:30 PM Eastern Time</small>
+                                </a>
+                                <a href="https://www.federalreserve.gov/releases/h15/" target="_blank" class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between align-items-center">
+                                        <h6 class="mb-1"><i class="fas fa-university me-2"></i>Federal Reserve</h6>
+                                        <span class="badge bg-primary">Official</span>
+                                    </div>
+                                    <p class="mb-1">Selected interest rates including federal funds rate, prime bank loan rate, commercial paper, CDs, Eurodollar deposits, and more.</p>
+                                    <small class="text-muted">Updated weekly on Fridays</small>
+                                </a>
+                                <a href="https://www.freddiemac.com/pmms" target="_blank" class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between align-items-center">
+                                        <h6 class="mb-1"><i class="fas fa-home me-2"></i>Freddie Mac</h6>
+                                        <span class="badge bg-success">Mortgage Rates</span>
+                                    </div>
+                                    <p class="mb-1">The Primary Mortgage Market Survey® (PMMS®) provides the most accurate, up-to-date mortgage rates for 30-year fixed, 15-year fixed, and 5/1 ARM products.</p>
+                                    <small class="text-muted">Updated weekly on Thursdays</small>
+                                </a>
+                                <a href="https://www.bankrate.com/" target="_blank" class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between align-items-center">
+                                        <h6 class="mb-1"><i class="fas fa-percentage me-2"></i>Bankrate</h6>
+                                        <span class="badge bg-info">Consumer Rates</span>
+                                    </div>
+                                    <p class="mb-1">Comprehensive resource for mortgage rates, personal loans, credit cards, CDs, and banking accounts with national averages.</p>
+                                    <small class="text-muted">Updated daily</small>
+                                </a>
+                                <a href="https://www.nerdwallet.com/mortgages/mortgage-rates" target="_blank" class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between align-items-center">
+                                        <h6 class="mb-1"><i class="fas fa-credit-card me-2"></i>NerdWallet</h6>
+                                        <span class="badge bg-info">Consumer Rates</span>
+                                    </div>
+                                    <p class="mb-1">Comparison tools for mortgages, personal loans, auto loans, credit cards and high-yield savings accounts.</p>
+                                    <small class="text-muted">Updated daily with market trends</small>
+                                </a>
+                            </div>
+                            
+                            <h5 class="mt-4 border-bottom pb-2">Additional Financial Resources</h5>
+                            
+                            <div class="list-group mb-4">
+                                <a href="https://www.consumerfinance.gov/" target="_blank" class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between align-items-center">
+                                        <h6 class="mb-1"><i class="fas fa-shield-alt me-2"></i>Consumer Financial Protection Bureau</h6>
+                                        <span class="badge bg-secondary">Education</span>
+                                    </div>
+                                    <p class="mb-1">Government agency providing tools and resources to help consumers navigate financial decisions.</p>
+                                </a>
+                                <a href="https://www.investors.gov/" target="_blank" class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between align-items-center">
+                                        <h6 class="mb-1"><i class="fas fa-chart-pie me-2"></i>Investor.gov</h6>
+                                        <span class="badge bg-secondary">Education</span>
+                                    </div>
+                                    <p class="mb-1">SEC resource helping investors avoid fraud and understand markets, investment products, and financial professionals.</p>
+                                </a>
+                                <a href="https://www.federalreserve.gov/consumerscommunities/mortgagecalc.htm" target="_blank" class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between align-items-center">
+                                        <h6 class="mb-1"><i class="fas fa-calculator me-2"></i>Mortgage Calculator</h6>
+                                        <span class="badge bg-warning text-dark">Tool</span>
+                                    </div>
+                                    <p class="mb-1">Federal Reserve's official mortgage calculator to estimate monthly payments based on current interest rates.</p>
+                                </a>
                             </div>
                         </div>
-                        <small class="text-muted" id="stock-data-date">Data as of: Fetching...</small><br>
-                        <small class="text-muted">Source: Financial indexes</small>
                     </div>
                 </div>
+                <small class="text-muted">Last updated: May 2024 | Contact your financial advisor for personalized advice.</small>
             </div>
         </div>
         <!-- End Financial Markets Section -->
@@ -147,408 +182,26 @@
     <!-- Treasury Rates Fetch Script -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Common date formatting function
-            function formatCurrentDate() {
-                const now = new Date();
-                return now.toLocaleDateString('en-US', { 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-            }
-            
-            // =====================
-            // Interest Rates Section
-            // =====================
-            const interestRatesContainer = document.getElementById('interest-rates-container');
-            const interestRatesDateElement = document.getElementById('interest-rates-date');
-            
-            function loadInterestRates() {
-                interestRatesContainer.innerHTML = '<p>Loading interest rates...</p>';
-                interestRatesDateElement.textContent = 'Data as of: Fetching...';
+            // Filter interest rates by category if present
+            document.getElementById('rates-category-filter')?.addEventListener('change', function() {
+                const selectedCategory = this.value;
+                const allCategoryDivs = document.querySelectorAll('#interest-rates-container .mb-3');
                 
-                // Since there's no free API for current interest rates that works well client-side,
-                // we'll use semi-static data with the current date
-                // In a production environment, this would be regularly updated from a server
-                
-                const currentRates = {
-                    "update_date": new Date(),
-                    "rates": [
-                        { 
-                            "category": "Mortgage", 
-                            "products": [
-                                { "name": "30-Year Fixed", "rate": 7.12, "change": 0.03 },
-                                { "name": "15-Year Fixed", "rate": 6.38, "change": 0.02 },
-                                { "name": "5/1 ARM", "rate": 6.87, "change": -0.01 }
-                            ]
-                        },
-                        { 
-                            "category": "Personal Loans", 
-                            "products": [
-                                { "name": "Excellent Credit (720+)", "rate": 11.28, "change": 0.00 },
-                                { "name": "Good Credit (690-719)", "rate": 17.45, "change": 0.25 },
-                                { "name": "Fair Credit (630-689)", "rate": 22.77, "change": 0.30 }
-                            ]
-                        },
-                        { 
-                            "category": "Credit Cards", 
-                            "products": [
-                                { "name": "Cash Back", "rate": 19.99, "change": 0.50 },
-                                { "name": "Balance Transfer", "rate": 18.75, "change": 0.25 },
-                                { "name": "Travel Rewards", "rate": 20.64, "change": 0.75 }
-                            ]
-                        },
-                        { 
-                            "category": "Auto Loans", 
-                            "products": [
-                                { "name": "New Car - 60 Month", "rate": 7.20, "change": -0.10 },
-                                { "name": "Used Car - 36 Month", "rate": 8.05, "change": 0.05 }
-                            ]
-                        },
-                        {
-                            "category": "Savings", 
-                            "products": [
-                                { "name": "High-Yield Savings", "rate": 4.50, "change": 0.00 },
-                                { "name": "1-Year CD", "rate": 5.15, "change": -0.05 },
-                                { "name": "5-Year CD", "rate": 4.25, "change": -0.10 }
-                            ]
+                if (selectedCategory === 'all') {
+                    // Show all categories
+                    allCategoryDivs.forEach(div => div.classList.remove('d-none'));
+                } else {
+                    // Show only selected category
+                    allCategoryDivs.forEach(div => {
+                        const categoryHeader = div.querySelector('h6');
+                        if (categoryHeader && categoryHeader.textContent.includes(selectedCategory)) {
+                            div.classList.remove('d-none');
+                        } else {
+                            div.classList.add('d-none');
                         }
-                    ]
-                };
-                
-                // Format the data for display
-                interestRatesDateElement.textContent = `Data as of: ${formatCurrentDate()}`;
-                
-                let htmlContent = '';
-                
-                currentRates.rates.forEach(category => {
-                    htmlContent += `
-                        <div class="mb-3">
-                            <h6 class="border-bottom pb-1">${category.category} Rates</h6>
-                            <div class="table-responsive">
-                                <table class="table table-sm">
-                                    <thead>
-                                        <tr>
-                                            <th style="width: 50%;" class="text-start">Product</th>
-                                            <th style="width: 25%;" class="text-end">Current Rate</th>
-                                            <th style="width: 25%;" class="text-end">Weekly Change</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>`;
-                    
-                    category.products.forEach(product => {
-                        const changeClass = product.change > 0 ? 'text-danger' : (product.change < 0 ? 'text-success' : 'text-muted');
-                        const changeSymbol = product.change > 0 ? '+' : '';
-                        
-                        htmlContent += `
-                            <tr>
-                                <td class="text-start">${product.name}</td>
-                                <td class="text-end"><strong>${product.rate.toFixed(2)}%</strong></td>
-                                <td class="text-end ${changeClass}">${changeSymbol}${product.change.toFixed(2)}%</td>
-                            </tr>`;
                     });
-                    
-                    htmlContent += `
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>`;
-                });
-                
-                htmlContent += `
-                    <div class="alert alert-info small py-2">
-                        <i class="fas fa-info-circle me-1"></i> Interest rates are national averages and may vary by lender, location, and borrower qualifications.
-                    </div>`;
-                
-                interestRatesContainer.innerHTML = htmlContent;
-            }
-            
-            // =====================
-            // Cryptocurrency Section
-            // =====================
-            const cryptoContainer = document.getElementById('crypto-data-container');
-            const cryptoDateElement = document.getElementById('crypto-data-date');
-            // CoinGecko API endpoint that doesn't require API key and has good CORS support
-            const cryptoApiUrl = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=10&page=1&sparkline=false&price_change_percentage=24h';
-
-            async function fetchCryptoMarketData() {
-                cryptoContainer.innerHTML = '<p>Loading latest data...</p>'; // Show loading message
-                cryptoDateElement.textContent = 'Data as of: Fetching...';
-                try {
-                    const response = await fetch(cryptoApiUrl);
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! Status: ${response.status}`);
-                    }
-                    const data = await response.json();
-
-                    if (data && data.length > 0) {
-                        // Format date nicely - current time as this is real-time data
-                        cryptoDateElement.textContent = `Data as of: ${formatCurrentDate()}`;
-
-                        // Create table for cryptocurrencies
-                        let htmlContent = `
-                            <div class="table-responsive">
-                                <table class="table table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th style="width: 40%;" class="text-start">Coin</th>
-                                            <th style="width: 20%;" class="text-end">Price (USD)</th>
-                                            <th style="width: 20%;" class="text-end">24h Change</th>
-                                            <th style="width: 20%;" class="text-end">Market Cap</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>`;
-                        
-                        // Add rows for each cryptocurrency
-                        data.forEach(coin => {
-                            // Format the price change with color
-                            const priceChange = coin.price_change_percentage_24h;
-                            const priceChangeClass = priceChange >= 0 ? 'text-success' : 'text-danger';
-                            const priceChangeSymbol = priceChange >= 0 ? '+' : '';
-                            const priceChangeFormatted = priceChange ? `${priceChangeSymbol}${priceChange.toFixed(2)}%` : 'N/A';
-                            
-                            // Format market cap
-                            const marketCap = new Intl.NumberFormat('en-US', {
-                                style: 'currency',
-                                currency: 'USD',
-                                notation: 'compact',
-                                maximumFractionDigits: 2
-                            }).format(coin.market_cap);
-
-                            // Format price
-                            const price = new Intl.NumberFormat('en-US', {
-                                style: 'currency',
-                                currency: 'USD',
-                                maximumFractionDigits: coin.current_price < 1 ? 6 : 2
-                            }).format(coin.current_price);
-
-                            htmlContent += `
-                                <tr>
-                                    <td class="text-start">
-                                        <img src="${coin.image}" alt="${coin.name}" width="24" height="24" class="me-2">
-                                        ${coin.name} (${coin.symbol.toUpperCase()})
-                                    </td>
-                                    <td class="text-end">${price}</td>
-                                    <td class="text-end ${priceChangeClass}">${priceChangeFormatted}</td>
-                                    <td class="text-end">${marketCap}</td>
-                                </tr>`;
-                        });
-                        
-                        htmlContent += `
-                                    </tbody>
-                                </table>
-                            </div>
-                            <p class="small text-muted mt-3">
-                                Cryptocurrency markets operate 24/7 and can be highly volatile. 
-                                Data refreshes when page is loaded.
-                            </p>`;
-                        
-                        cryptoContainer.innerHTML = htmlContent;
-
-                    } else {
-                        // Handle empty data
-                        cryptoContainer.innerHTML = '<p class="text-warning">No cryptocurrency data available.</p>';
-                        cryptoDateElement.textContent = 'Data as of: Unknown';
-                    }
-
-                } catch (error) {
-                    console.error('Error fetching crypto data:', error);
-                    cryptoContainer.innerHTML = `<p class="text-danger">Could not load cryptocurrency data. ${error.message}. Please try refreshing the page.</p>`;
-                    cryptoDateElement.textContent = 'Data as of: Error';
                 }
-            }
-            
-            // =====================
-            // Stock Market Section
-            // =====================
-            const stockContainer = document.getElementById('stock-data-container');
-            const stockDateElement = document.getElementById('stock-data-date');
-            
-            function loadStockMarketData() {
-                stockContainer.innerHTML = '<p>Loading stock market data...</p>';
-                stockDateElement.textContent = 'Data as of: Fetching...';
-                
-                // Since most stock APIs require authentication, we'll use semi-static data
-                // for major indices with the current date for demonstration
-                const stockMarketData = {
-                    "update_date": new Date(),
-                    "indices": [
-                        { "name": "S&P 500", "value": 5248.82, "change": 0.85, "change_percent": 1.02 },
-                        { "name": "Dow Jones", "value": 39375.87, "change": 267.25, "change_percent": 0.68 },
-                        { "name": "NASDAQ", "value": 16442.03, "change": 317.33, "change_percent": 1.97 },
-                        { "name": "Russell 2000", "value": 2064.74, "change": -8.92, "change_percent": -0.43 },
-                        { "name": "FTSE 100", "value": 7930.96, "change": 13.64, "change_percent": 0.17 }
-                    ]
-                };
-                
-                // Format the data for display
-                stockDateElement.textContent = `Data as of: ${formatCurrentDate()}`;
-                
-                let htmlContent = `
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th style="width: 40%;" class="text-start">Index</th>
-                                    <th style="width: 20%;" class="text-end">Price</th>
-                                    <th style="width: 20%;" class="text-end">Change</th>
-                                    <th style="width: 20%;" class="text-end">% Change</th>
-                                </tr>
-                            </thead>
-                            <tbody>`;
-                
-                stockMarketData.indices.forEach(index => {
-                    const changeClass = index.change >= 0 ? 'text-success' : 'text-danger';
-                    const changeSymbol = index.change >= 0 ? '+' : '';
-                    
-                    htmlContent += `
-                        <tr class="index-row" data-index="${index.name}">
-                            <td class="text-start"><strong class="index-name" style="cursor: pointer;">${index.name}</strong></td>
-                            <td class="text-end">${index.value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                            <td class="text-end ${changeClass}">${changeSymbol}${Math.abs(index.change).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                            <td class="text-end ${changeClass}">${changeSymbol}${index.change_percent.toFixed(2)}%</td>
-                        </tr>`;
-                });
-                
-                htmlContent += `
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="alert alert-info small py-2">
-                        <i class="fas fa-info-circle me-1"></i> Stock market data shown represents major indices only. Individual stock performance may vary. For live trading data, consult a financial service provider.
-                    </div>`;
-                
-                stockContainer.innerHTML = htmlContent;
-                
-                // After the table is created, add event listeners to index names
-                setTimeout(() => {
-                    document.querySelectorAll('.index-name').forEach(element => {
-                        element.addEventListener('click', function() {
-                            const indexName = this.closest('tr').dataset.index;
-                            showTopStocks(indexName);
-                        });
-                    });
-                }, 100); // Small delay to ensure DOM is updated
-            }
-            
-            // Function to show the top stocks for a given index
-            function showTopStocks(indexName) {
-                const topStocksContainer = document.getElementById('top-stocks-container');
-                const topStocksData = document.getElementById('top-stocks-data');
-                const selectedIndexTitle = document.getElementById('selected-index-title');
-                
-                // Update the title and show the container
-                selectedIndexTitle.textContent = `Top Companies in ${indexName}`;
-                topStocksContainer.classList.remove('d-none');
-                topStocksData.innerHTML = '<p>Loading top stocks data...</p>';
-                
-                // Predefined top stocks for each index (since we can't easily query this data client-side)
-                const topStocksByIndex = {
-                    "S&P 500": [
-                        { symbol: "AAPL", name: "Apple Inc.", price: 169.75, change: 1.23 },
-                        { symbol: "MSFT", name: "Microsoft Corporation", price: 417.88, change: 2.35 },
-                        { symbol: "AMZN", name: "Amazon.com Inc.", price: 178.75, change: -0.54 },
-                        { symbol: "NVDA", name: "NVIDIA Corporation", price: 893.98, change: 15.67 },
-                        { symbol: "GOOGL", name: "Alphabet Inc.", price: 147.60, change: 0.91 }
-                    ],
-                    "Dow Jones": [
-                        { symbol: "UNH", name: "UnitedHealth Group Inc.", price: 490.01, change: -2.15 },
-                        { symbol: "GS", name: "Goldman Sachs Group Inc.", price: 389.13, change: 3.75 },
-                        { symbol: "HD", name: "Home Depot Inc.", price: 342.90, change: 1.03 },
-                        { symbol: "CAT", name: "Caterpillar Inc.", price: 347.92, change: 4.37 },
-                        { symbol: "MCD", name: "McDonald's Corporation", price: 266.47, change: -0.43 }
-                    ],
-                    "NASDAQ": [
-                        { symbol: "TSLA", name: "Tesla, Inc.", price: 174.50, change: -1.37 },
-                        { symbol: "META", name: "Meta Platforms, Inc.", price: 477.78, change: 5.82 },
-                        { symbol: "AVGO", name: "Broadcom Inc.", price: 1295.01, change: 23.45 },
-                        { symbol: "COST", name: "Costco Wholesale Corporation", price: 731.31, change: 3.87 },
-                        { symbol: "PEP", name: "PepsiCo, Inc.", price: 169.91, change: -0.34 }
-                    ],
-                    "Russell 2000": [
-                        { symbol: "MEDP", name: "Medpace Holdings, Inc.", price: 388.31, change: 4.23 },
-                        { symbol: "PLMR", name: "Palomar Holdings, Inc.", price: 82.43, change: -1.32 },
-                        { symbol: "APEI", name: "American Public Education, Inc.", price: 12.91, change: 0.23 },
-                        { symbol: "COWN", name: "Cowen Inc.", price: 38.50, change: 0.75 },
-                        { symbol: "CDE", name: "Coeur Mining, Inc.", price: 5.82, change: -0.18 }
-                    ],
-                    "FTSE 100": [
-                        { symbol: "AZN.L", name: "AstraZeneca PLC", price: 12456.00, change: 125.00 },
-                        { symbol: "HSBA.L", name: "HSBC Holdings plc", price: 675.90, change: 8.45 },
-                        { symbol: "SHEL.L", name: "Shell plc", price: 2851.50, change: -24.50 },
-                        { symbol: "ULVR.L", name: "Unilever PLC", price: 4086.00, change: 32.00 },
-                        { symbol: "BP.L", name: "BP p.l.c.", price: 498.85, change: 5.25 }
-                    ]
-                };
-                
-                // Get the stocks for the selected index
-                const stocks = topStocksByIndex[indexName] || [];
-                
-                if (stocks.length === 0) {
-                    topStocksData.innerHTML = '<p class="text-warning">No stock data available for this index.</p>';
-                    return;
-                }
-                
-                // Create table for the stocks
-                let stocksHtml = `
-                    <div class="table-responsive">
-                        <table class="table table-sm table-hover">
-                            <thead>
-                                <tr>
-                                    <th style="width: 15%;" class="text-start">Symbol</th>
-                                    <th style="width: 45%;" class="text-start">Company</th>
-                                    <th style="width: 20%;" class="text-end">Price</th>
-                                    <th style="width: 20%;" class="text-end">Change</th>
-                                </tr>
-                            </thead>
-                            <tbody>`;
-                
-                stocks.forEach(stock => {
-                    const changeClass = stock.change >= 0 ? 'text-success' : 'text-danger';
-                    const changeSymbol = stock.change >= 0 ? '+' : '';
-                    const formattedPrice = indexName === "FTSE 100" 
-                        ? stock.price.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) 
-                        : stock.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                    
-                    stocksHtml += `
-                        <tr>
-                            <td class="text-start"><strong>${stock.symbol}</strong></td>
-                            <td class="text-start">${stock.name}</td>
-                            <td class="text-end">${formattedPrice}</td>
-                            <td class="text-end ${changeClass}">${changeSymbol}${Math.abs(stock.change).toFixed(2)}</td>
-                        </tr>`;
-                });
-                
-                stocksHtml += `
-                            </tbody>
-                        </table>
-                    </div>
-                    <p class="small text-muted mt-2 mb-0">
-                        Showing top 5 companies in ${indexName} by market capitalization.
-                    </p>`;
-                
-                topStocksData.innerHTML = stocksHtml;
-            }
-            
-            // Load the initial data for each tab
-            loadInterestRates(); // Load interest rates immediately as it's the active tab
-            
-            // Set up event listeners for tab changes
-            document.getElementById('crypto-tab').addEventListener('click', fetchCryptoMarketData);
-            document.getElementById('stocks-tab').addEventListener('click', loadStockMarketData);
-            
-            // Pre-load data for other tabs to have them ready when tabs are clicked
-            fetchCryptoMarketData();
-            loadStockMarketData();
-            
-            // Refresh data every 5 minutes for all tabs
-            setInterval(() => {
-                loadInterestRates();
-                fetchCryptoMarketData();
-                loadStockMarketData();
-            }, 300000); // 5 minutes
+            });
         });
     </script>
 </body>
