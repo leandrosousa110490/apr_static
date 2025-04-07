@@ -39,63 +39,127 @@
     <main class="container mt-4 flex-grow-1">
         <h2 class="mb-4"><i class="fas fa-search-dollar"></i> APR Checker</h2>
         
-        <div class="card shadow-sm mb-4">
-            <div class="card-header">Enter Loan Information</div>
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="fas fa-calculator me-2"></i>APR Checker Inputs</h4>
+            </div>
             <div class="card-body">
-                <form id="apr-checker-form">
-                    <div class="row g-3">
+                <form id="apr-checker-form" novalidate>
+                    <div class="row g-3 mb-3">
+                        <h5 class="col-12 text-primary border-bottom pb-2">Required Information</h5>
+                        <!-- Required Inputs -->
                         <div class="col-md-6">
-                            <label for="loan-amount" class="form-label">Loan Amount (Principal) ($)</label>
-                            <div class="input-group">
+                            <label for="loan-amount" class="form-label">Loan Amount ($) <span class="text-danger">*</span></label>
+                            <div class="input-group has-validation">
                                 <span class="input-group-text"><i class="fas fa-dollar-sign"></i></span>
                                 <input type="number" class="form-control" id="loan-amount" placeholder="e.g., 10000" required>
                                 <div class="invalid-feedback" id="aprLoanAmountError"></div>
                             </div>
                         </div>
                         <div class="col-md-6">
-                             <label for="finance-charge" class="form-label">Total Finance Charge ($)</label>
-                             <div class="input-group">
+                            <label for="loan-term-value" class="form-label">Loan Term <span class="text-danger">*</span></label>
+                            <div class="input-group has-validation">
+                                <input type="number" class="form-control" id="loan-term-value" placeholder="e.g., 5 or 60" required>
+                                <select class="form-select flex-grow-0" id="loan-term-unit" style="width: auto;" aria-label="Loan term unit">
+                                    <option value="years" selected>Years</option>
+                                    <option value="months">Months</option>
+                                </select>
+                                <div class="invalid-feedback" id="aprLoanTermError"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <h5 class="col-12 text-primary border-bottom pb-2">Payment Information (Optional)</h5>
+                        <p class="col-12 text-muted small mb-0">Provide at least Monthly Payment OR Total Finance Charge for APR calculation.</p>
+                        <!-- Optional Inputs -->
+                        <div class="col-md-6">
+                            <label for="finance-charge" class="form-label">Total Finance Charge ($)</label>
+                            <div class="input-group">
                                 <span class="input-group-text"><i class="fas fa-file-invoice-dollar"></i></span>
-                                <input type="number" class="form-control" id="finance-charge" step="0.01" placeholder="Total Interest + Fees" required>
+                                <input type="number" class="form-control" id="finance-charge" step="0.01" placeholder="Total Interest + Fees">
                                 <div class="invalid-feedback" id="aprFinanceChargeError"></div>
-                                <span class="input-group-text" data-bs-toggle="tooltip" title="The total cost of credit, including interest and all fees charged by the lender.">
+                                <span class="input-group-text" data-bs-toggle="tooltip" title="Total cost of credit (interest + fees). Leave blank if providing Monthly Payment.">
                                     <i class="fas fa-info-circle"></i>
                                 </span>
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <label for="loan-term-months" class="form-label">Loan Term (Total Number of Payments)</label>
-                             <div class="input-group">
-                                 <span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
-                                <input type="number" class="form-control" id="loan-term-months" placeholder="e.g., 60 for 5 years" required>
-                                <div class="invalid-feedback" id="aprLoanTermMonthsError"></div>
-                             </div>
+                            <label for="monthly-payment" class="form-label">Monthly Payment ($)</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-money-bill-wave"></i></span>
+                                <input type="number" class="form-control" id="monthly-payment" step="0.01" placeholder="Regular Payment">
+                                <div class="invalid-feedback" id="aprMonthlyPaymentError"></div>
+                                <span class="input-group-text" data-bs-toggle="tooltip" title="Regular monthly payment. Leave blank if providing Finance Charge.">
+                                    <i class="fas fa-info-circle"></i>
+                                </span>
+                            </div>
                         </div>
-                         <div class="col-md-6">
-                            <label for="stated-apr" class="form-label">Stated APR (%) (Optional)</label>
-                             <div class="input-group">
-                                <span class="input-group-text"><i class="fas fa-percentage"></i></span>
-                                <input type="number" class="form-control" id="stated-apr" step="0.01" placeholder="APR provided by lender">
+                        <div class="col-md-6">
+                            <label for="first-payment-amount" class="form-label">First Payment Amount ($)</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-receipt"></i></span>
+                                <input type="number" class="form-control" id="first-payment-amount" step="0.01" placeholder="Defaults to Monthly Payment">
+                                <div class="invalid-feedback" id="aprFirstPaymentAmountError"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="last-payment-amount" class="form-label">Last Payment Amount ($)</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-flag-checkered"></i></span>
+                                <input type="number" class="form-control" id="last-payment-amount" step="0.01" placeholder="Defaults to Monthly Payment">
+                                <div class="invalid-feedback" id="aprLastPaymentAmountError"></div>
                             </div>
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-primary mt-3"><i class="fas fa-calculator"></i> Calculate Estimated APR</button>
+                    
+                     <div class="row g-3">
+                         <h5 class="col-12 text-primary border-bottom pb-2">Date Information (Optional)</h5>
+                         <p class="col-12 text-muted small mb-0">Providing dates allows for more accurate APR calculation if the first payment period is irregular.</p>
+                         <div class="col-md-4">
+                             <label for="closing-date" class="form-label">Closing Date</label>
+                             <input type="date" class="form-control" id="closing-date">
+                             <div class="invalid-feedback" id="aprClosingDateError"></div>
+                         </div>
+                         <div class="col-md-4">
+                             <label for="first-payment-date" class="form-label">First Payment Date</label>
+                             <input type="date" class="form-control" id="first-payment-date">
+                             <div class="invalid-feedback" id="aprFirstPaymentDateError"></div>
+                         </div>
+                         <div class="col-md-4">
+                             <label for="last-payment-date" class="form-label">Last Payment Date</label>
+                             <input type="date" class="form-control" id="last-payment-date">
+                             <div class="invalid-feedback" id="aprLastPaymentDateError"></div>
+                         </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 mt-4"><i class="fas fa-calculator me-2"></i>Calculate APR</button>
                 </form>
             </div>
         </div>
 
-        <!-- Results Area -->
-        <div id="apr-result-container" class="mt-4">
-            <div id="apr-result" class="alert alert-info d-none"> 
-                <!-- Result will be displayed here -->
+        <!-- Results Card (Initially Hidden) -->
+        <div id="apr-result" class="card shadow-sm mt-4 d-none">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="fas fa-chart-line me-2"></i>APR Calculation Results</h4>
             </div>
-             <div id="apr-error" class="alert alert-danger d-none"> 
-                <!-- Error will be displayed here -->
+            <div class="card-body">
+                <div class="alert alert-success">
+                    <h5 class="alert-heading">Estimated Annual Percentage Rate (APR):</h5>
+                    <p class="fs-3 fw-bold mb-0"><span id="estimated-apr">--.--</span>%</p>
+                </div>
+                <hr>
+                <h5>Calculation Details:</h5>
+                <p class="mb-1">Calculated Finance Charge: <strong id="calculated-finance-charge">$ --.--</strong></p>
+                <p class="mb-0">Calculated Total of Payments: <strong id="calculated-total-payments">$ --.--</strong></p>
             </div>
-            <div class="alert alert-warning mt-3 small">
-                <i class="fas fa-exclamation-triangle"></i> <strong>Disclaimer:</strong> The calculated APR is an estimate based on the approximation formula [APR ≈ (2 * 12 * Finance Charge) / (Loan Amount * (Total Payments + 1))]. The actual APR calculated according to Regulation Z may differ, especially for loans with irregular payments or complex fee structures. This tool is for informational purposes only.
+            <div class="card-footer text-muted small">
+                Note: APR calculation accuracy depends on the information provided. Calculations involving irregular first periods or payment amounts are complex. This is an estimate.
             </div>
         </div>
+        
+        <!-- General Error Alert -->
+        <div id="apr-error" class="alert alert-danger mt-4 d-none"></div>
 
     </main>
 
