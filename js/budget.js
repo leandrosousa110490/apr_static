@@ -22,12 +22,21 @@ document.addEventListener('DOMContentLoaded', () => {
     // Summary Elements
     const totalIncomeSpan = document.getElementById('total-income');
     const totalExpensesSpan = document.getElementById('total-expenses');
-    const netBalanceSpan = document.getElementById('net-balance');
+    const netBalanceSpan = document.getElementById('remaining-budget');
     const summaryCard = document.getElementById('budget-summary');
 
     // Chart Element
-    const budgetChartCtx = document.getElementById('budgetChart')?.getContext('2d');
+    const budgetChartCtx = document.getElementById('expense-chart')?.getContext('2d');
     let budgetChart = null;
+
+    // *** Add Initial Element Logging ***
+    console.log("Initial Element Check:");
+    console.log(" - totalIncomeSpan:", totalIncomeSpan ? 'Found' : 'NOT FOUND');
+    console.log(" - totalExpensesSpan:", totalExpensesSpan ? 'Found' : 'NOT FOUND');
+    console.log(" - netBalanceSpan:", netBalanceSpan ? 'Found' : 'NOT FOUND');
+    console.log(" - summaryCard:", summaryCard ? 'Found' : 'NOT FOUND');
+    console.log(" - budgetChartCtx:", budgetChartCtx ? 'Found' : 'NOT FOUND');
+    // ********************************
 
     // Data Storage & State
     let incomeItems = [];
@@ -92,18 +101,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Functions to Add/Update Items ---
     function addIncomeItem(description, amount) {
+        console.log("Attempting to add income:", description, amount);
         const newItem = { id: Date.now(), description, amount };
         incomeItems.push(newItem);
-        saveData();
         renderLists();
         updateSummary();
         updateChart();
     }
 
     function addExpenseItem(description, amount) {
+        console.log("Attempting to add expense:", description, amount);
         const newItem = { id: Date.now() + 1, description, amount }; // Offset ID slightly
         expenseItems.push(newItem);
-        saveData();
         renderLists();
         updateSummary();
         updateChart();
@@ -119,7 +128,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 item.id === id ? { ...item, description: newDescription, amount: newAmount } : item
             );
         }
-        saveData();
         renderLists();
         updateSummary();
         updateChart();
@@ -245,7 +253,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (type === 'expense') {
             expenseItems = expenseItems.filter(item => item.id !== id);
         }
-        saveData();
         renderLists();
         updateSummary();
         updateChart();
@@ -300,120 +307,137 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Functions to Update Summary and Chart ---
     function updateSummary() {
+        console.log("updateSummary function called."); // Log function entry
         const totalIncome = incomeItems.reduce((sum, item) => sum + item.amount, 0);
         const totalExpenses = expenseItems.reduce((sum, item) => sum + item.amount, 0);
         const netBalance = totalIncome - totalExpenses;
-        totalIncomeSpan.textContent = totalIncome.toFixed(2);
-        totalExpensesSpan.textContent = totalExpenses.toFixed(2);
-        netBalanceSpan.textContent = netBalance.toFixed(2);
-        summaryCard.classList.remove('border-success', 'border-danger', 'border-secondary');
-        netBalanceSpan.classList.remove('text-success', 'text-danger');
-        if (netBalance > 0) {
-            summaryCard.classList.add('border-success');
-            netBalanceSpan.classList.add('text-success');
-        } else if (netBalance < 0) {
-            summaryCard.classList.add('border-danger');
-            netBalanceSpan.classList.add('text-danger');
+        
+        // *** Log calculated values ***
+        console.log("Calculated Summary - Income:", totalIncome, "Expenses:", totalExpenses, "Net:", netBalance);
+
+        // Check if spans exist before setting textContent
+        if (totalIncomeSpan) {
+            totalIncomeSpan.textContent = totalIncome.toFixed(2);
+             console.log("Set totalIncomeSpan textContent.");
         } else {
-            summaryCard.classList.add('border-secondary');
+             console.error("totalIncomeSpan element not found!");
+        }
+        
+        if (totalExpensesSpan) {
+            totalExpensesSpan.textContent = totalExpenses.toFixed(2);
+             console.log("Set totalExpensesSpan textContent.");
+        } else {
+            console.error("totalExpensesSpan element not found!");
+        }
+        
+        if (netBalanceSpan) {
+            netBalanceSpan.textContent = netBalance.toFixed(2);
+             console.log("Set netBalanceSpan textContent using ID 'remaining-budget'.");
+        } else {
+             console.error("netBalanceSpan element (ID: remaining-budget) not found! Check ID in HTML.");
+        }
+
+        // Update summary card style based on balance
+        if (netBalanceSpan) {
+            netBalanceSpan.classList.remove('text-success', 'text-danger');
+            if (netBalance > 0) {
+                netBalanceSpan.classList.add('text-success');
+            } else if (netBalance < 0) {
+                netBalanceSpan.classList.add('text-danger');
+            } 
+            console.log("Updated netBalanceSpan styles.");
+        } else {
+            console.error("Cannot update netBalanceSpan style as element not found.");
         }
     }
 
     function updateChart() {
-        if (!budgetChartCtx) return;
+        // *** Re-check context each time ***
+        const currentChartCtx = document.getElementById('expense-chart')?.getContext('2d');
+        console.log("updateChart function called."); 
+        if (!currentChartCtx) { // Use the locally fetched context for check
+            console.error("Budget Chart Context (ID: expense-chart) is null or undefined inside updateChart.");
+            return;
+        }
+        console.log("Budget Chart Context (ID: expense-chart) found inside updateChart.");
+
         const totalIncome = incomeItems.reduce((sum, item) => sum + item.amount, 0);
         const totalExpenses = expenseItems.reduce((sum, item) => sum + item.amount, 0);
+        console.log("Chart Data Totals - Income:", totalIncome, "Expenses:", totalExpenses);
+
         const currentTheme = document.documentElement.getAttribute('data-bs-theme') || 'light';
         if (budgetChart) {
+            console.log("Destroying previous budget chart.");
             budgetChart.destroy();
         }
         if (totalIncome <= 0 && totalExpenses <= 0) {
-            budgetChartCtx.clearRect(0, 0, budgetChartCtx.canvas.width, budgetChartCtx.canvas.height);
-            budgetChartCtx.font = "16px 'Segoe UI'";
-            budgetChartCtx.fillStyle = currentTheme === 'dark' ? '#adb5bd' : '#6c757d';
-            budgetChartCtx.textAlign = 'center';
-            budgetChartCtx.fillText("Add income or expenses to see chart", budgetChartCtx.canvas.width / 2, budgetChartCtx.canvas.height / 2);
+             console.log("No income or expenses to chart, drawing placeholder text.");
+            currentChartCtx.clearRect(0, 0, currentChartCtx.canvas.width, currentChartCtx.canvas.height);
+            currentChartCtx.font = "16px 'Segoe UI'";
+            currentChartCtx.fillStyle = currentTheme === 'dark' ? '#adb5bd' : '#6c757d';
+            currentChartCtx.textAlign = 'center';
+            currentChartCtx.fillText("Add income or expenses to see chart", currentChartCtx.canvas.width / 2, currentChartCtx.canvas.height / 2);
             return;
         }
         const incomeColor = currentTheme === 'dark' ? '#20c997' : '#198754';
         const expenseColor = currentTheme === 'dark' ? '#fd7e14' : '#dc3545';
         const legendColor = currentTheme === 'dark' ? '#dee2e6' : '#212529';
-        budgetChart = new Chart(budgetChartCtx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Total Income', 'Total Expenses'],
-                datasets: [{
-                    label: 'Budget Overview',
-                    data: [Math.max(0, totalIncome), Math.max(0, totalExpenses)],
-                    backgroundColor: [incomeColor, expenseColor],
-                    hoverOffset: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            color: legendColor
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                let label = context.label || '';
-                                if (label) { label += ': '; }
-                                if (context.parsed !== null) {
-                                    label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed);
+        
+        console.log("Creating new budget chart...");
+        try {
+            budgetChart = new Chart(currentChartCtx, { // Use locally fetched context
+                type: 'doughnut',
+                data: {
+                    labels: ['Total Income', 'Total Expenses'],
+                    datasets: [{
+                        label: 'Budget Overview',
+                        data: [Math.max(0, totalIncome), Math.max(0, totalExpenses)],
+                        backgroundColor: [incomeColor, expenseColor],
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: legendColor
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) { label += ': '; }
+                                    if (context.parsed !== null) {
+                                        label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed);
+                                    }
+                                    return label;
                                 }
-                                return label;
                             }
                         }
                     }
                 }
-            }
-        });
-    }
-
-    // --- Local Storage Functions ---
-    function saveData() {
-        try {
-            localStorage.setItem('budgetIncomeItems', JSON.stringify(incomeItems));
-            localStorage.setItem('budgetExpenseItems', JSON.stringify(expenseItems));
-        } catch (e) {
-            console.error("Error saving data to localStorage:", e);
-            // Optionally notify the user that data couldn't be saved (e.g., alert)
+            });
+             console.log("Budget chart created successfully.");
+        } catch (error) {
+            console.error("Error creating Chart.js instance:", error);
         }
     }
 
-    function loadData() {
-        try {
-            const storedIncome = localStorage.getItem('budgetIncomeItems');
-            const storedExpenses = localStorage.getItem('budgetExpenseItems');
-            if (storedIncome) {
-                incomeItems = JSON.parse(storedIncome);
-            } else {
-                incomeItems = []; // Ensure it's an array if nothing is stored
-            }
-            if (storedExpenses) {
-                expenseItems = JSON.parse(storedExpenses);
-            } else {
-                expenseItems = []; // Ensure it's an array if nothing is stored
-            }
-        } catch (e) {
-            console.error("Error loading data from localStorage:", e);
-            // Reset to empty arrays on error and clear potentially corrupted storage
-            incomeItems = [];
-            expenseItems = [];
-            localStorage.removeItem('budgetIncomeItems');
-            localStorage.removeItem('budgetExpenseItems');
-            // Optionally notify the user that data couldn't be loaded
-        }
-        // Initial render after loading
+    // --- Initialize Budget Function ---
+    function initializeBudget() {
+        console.log("Initializing budget...");
+        // Ensure data arrays are initially empty
+        incomeItems = [];
+        expenseItems = [];
+        // Initial render
         renderLists();
         updateSummary();
         updateChart();
+        console.log("Budget initialized.");
     }
 
     // --- Event Listeners Setup ---
@@ -421,7 +445,7 @@ document.addEventListener('DOMContentLoaded', () => {
     expenseList?.addEventListener('click', handleListActions);
     window.addEventListener('themeChanged', updateChart);
 
-    // Load data on initial page load
-    loadData();
+    // Initialize the budget on page load
+    initializeBudget();
 
 }); 
