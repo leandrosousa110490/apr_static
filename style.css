@@ -80,4 +80,87 @@ footer { ... } -> Handled by body flex and Bootstrap classes
 
 @media (max-width: 480px) {
      /* Most rules here are likely handled by Bootstrap */
+}
+
+/* Footer Styling */
+footer {
+    /* background-color: #343a40; */ /* Using Bootstrap class */
+}
+
+/* Floating Action Button (FAB) */
+.fab {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
+    font-size: 24px;
+    z-index: 1050; /* Ensure it's above most elements but below modals */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Dynamic Calculator Modal Styles */
+.calculator-modal-dialog {
+    max-width: 350px; /* Adjust width as needed */
+}
+
+.calculator-modal-body {
+    padding: 1rem;
+}
+
+.calculator-modal-body #calc-display {
+    font-size: 1.8rem;
+    height: auto;
+    background-color: var(--bs-light); /* Match theme */
+    color: var(--bs-dark); /* Match theme */
+    border: 1px solid var(--bs-border-color);
+}
+
+/* Dark theme specific display */
+[data-bs-theme="dark"] .calculator-modal-body #calc-display {
+    background-color: var(--bs-dark-bg-subtle); /* Darker background for display */
+    color: var(--bs-light);
+    border: 1px solid var(--bs-border-color-translucent);
+}
+
+.calc-btn {
+    font-size: 1.2rem;
+    padding: 0.75rem 0;
+    height: 55px; /* Ensure buttons are uniform height */
+}
+
+.calc-btn.operator {
+    /* background-color: #ffc107; */ /* Using Bootstrap class */
+    /* border-color: #ffc107; */
+}
+
+/* Dark theme calculator button adjustments */
+[data-bs-theme="dark"] .calc-btn.btn-light {
+    background-color: var(--bs-gray-700);
+    color: var(--bs-light);
+    border-color: var(--bs-gray-600);
+}
+[data-bs-theme="dark"] .calc-btn.btn-light:hover {
+    background-color: var(--bs-gray-600);
+}
+
+[data-bs-theme="dark"] .calc-btn.btn-secondary {
+    background-color: var(--bs-gray-600);
+    color: var(--bs-light);
+    border-color: var(--bs-gray-500);
+}
+[data-bs-theme="dark"] .calc-btn.btn-secondary:hover {
+    background-color: var(--bs-gray-500);
+}
+
+/* Make Calculator Modal Header Draggable */
+#dynamicCalculatorModal .modal-header {
+    cursor: move; /* Or 'grab' */
+}
+
+/* Optional: Indicate dragging state */
+#dynamicCalculatorModal.dragging .modal-header {
+    cursor: grabbing;
 } 
