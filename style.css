@@ -163,4 +163,68 @@ footer {
 /* Optional: Indicate dragging state */
 #dynamicCalculatorModal.dragging .modal-header {
     cursor: grabbing;
+}
+
+/* Extra Payment Calculator Styles */
+.savings-progress-container {
+    margin-top: 15px;
+    margin-bottom: 10px;
+}
+
+.savings-progress {
+    height: 20px;
+    transition: width 0.5s ease-in-out;
+}
+
+.extra-payment-summary .card-header {
+    font-weight: bold;
+}
+
+.payoff-comparison-chart-container {
+    height: 300px;
+    margin-top: 15px;
+    margin-bottom: 15px;
+}
+
+.savings-stats {
+    background-color: rgba(var(--bs-success-rgb), 0.1);
+    border-radius: 0.375rem;
+    padding: 15px;
+    margin-top: 10px;
+}
+
+.savings-highlight {
+    font-weight: bold;
+    color: var(--bs-success);
+}
+
+/* Dark theme adjustments for savings section */
+[data-bs-theme="dark"] .savings-stats {
+    background-color: rgba(var(--bs-success-rgb), 0.15);
+}
+
+[data-bs-theme="dark"] .savings-highlight {
+    color: var(--bs-success-text-emphasis);
+}
+
+/* Amortization table styles */
+.table-responsive {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.sticky-top {
+    z-index: 100;
+    position: sticky;
+    top: 0;
+}
+
+/* Input Switch styling adjustments */
+.form-switch .form-check-input {
+    height: 1.25rem;
+    width: 2.5rem;
+}
+
+.form-check-label {
+    padding-left: 0.25rem;
 } 

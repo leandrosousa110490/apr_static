@@ -1,5 +1,10 @@
 // Placeholder for calculator logic
 document.addEventListener('DOMContentLoaded', () => {
+    // Register Chart.js annotation plugin if available
+    if (typeof Chart !== 'undefined' && Chart.register && Chart.Annotation) {
+        Chart.register(Chart.Annotation);
+    }
+    
     const calculatorForm = document.getElementById('calculator-form');
     const loanAmountInput = document.getElementById('loan-amount');
     const interestRateInput = document.getElementById('interest-rate');
@@ -311,69 +316,90 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Generate Amortization Schedule with Extra Payments ---
-    function generateAmortizationWithExtraPayments(principal, monthlyInterestRate, numberOfPayments, monthlyPayment, extraPayments) {
+    function generateAmortizationWithExtraPayments(principal, monthlyInterestRate, numberOfPayments, baseMonthlyPayment, extraPayments) {
         let schedule = [];
         let balance = principal;
         let month = 1;
+
+        // Destructure extra payment parameters
+        const { 
+            extraMonthly = 0, 
+            extraAnnual = 0, 
+            oneTimeAmount = 0, 
+            oneTimeMonth = 1,
+            paymentSchedule = 'monthly'
+        } = extraPayments || {};
+
+        const biweekly = paymentSchedule === 'biweekly';
+        let scheduledPayment = biweekly ? baseMonthlyPayment / 2 : baseMonthlyPayment;
         
-        // Destructure extra payments object for easier access
-        const { extraMonthly, extraAnnual, extraOneTime, oneTimeMonth, biweekly } = extraPayments;
-        
-        // For bi-weekly payment calculation
-        const biweeklyPayment = biweekly ? monthlyPayment / 2 : 0;
-        const biweeklyExtraPerMonth = biweekly ? (biweeklyPayment * 26) / 12 - monthlyPayment : 0;
-        
-        while (balance > 0 && month <= numberOfPayments * 1.5) { // Allow for up to 50% longer term as safeguard
-            let extraPrincipalThisMonth = extraMonthly + (biweekly ? biweeklyExtraPerMonth : 0);
-            
-            // Add annual extra payment in December (month 12, 24, 36, etc.)
-            if (extraAnnual > 0 && month % 12 === 0) {
-                extraPrincipalThisMonth += extraAnnual;
-            }
-            
-            // Add one-time extra payment in specified month
-            if (extraOneTime > 0 && month === oneTimeMonth) {
-                extraPrincipalThisMonth += extraOneTime;
-            }
-            
-            let interestPayment = balance * monthlyInterestRate;
-            let principalPayment = monthlyPayment - interestPayment;
-            let paymentAmount = monthlyPayment;
-            
-            // Adjust for final payment
-            if (balance < (monthlyPayment + extraPrincipalThisMonth)) {
-                principalPayment = balance;
-                interestPayment = balance * monthlyInterestRate;
-                paymentAmount = principalPayment + interestPayment;
-                balance = 0;
-            } else {
-                // Apply extra payment directly to principal
-                balance = balance - principalPayment - extraPrincipalThisMonth;
+        // For biweekly, we'll make a payment every two weeks (26 payments per year)
+        // which equals 13 monthly-equivalent payments instead of 12
+        const paymentsPerPeriod = biweekly ? 2 : 1;
+        let biweeklyCounter = 0;
+
+        while (balance > 0 && month <= numberOfPayments * 1.5) {  // Limit to 1.5x original term as safety
+            for (let p = 0; p < paymentsPerPeriod; p++) {
+                if (balance <= 0) break;
                 
-                // Include extra payment in total payment amount
-                paymentAmount = monthlyPayment + extraPrincipalThisMonth;
+                // Only proceed with the second payment in biweekly if we have balance left
+                if (biweekly && p === 1 && balance <= 0) break;
+                
+                // For biweekly, we count each payment separately
+                if (biweekly) biweeklyCounter++;
+                
+                // Calculate regular interest for this payment period
+                const interestPayment = balance * (biweekly ? monthlyInterestRate / 2 : monthlyInterestRate);
+                
+                // Determine base payment amount not to exceed remaining balance + interest
+                let paymentAmount = Math.min(scheduledPayment, balance + interestPayment);
+                let principalPayment = paymentAmount - interestPayment;
+                
+                // Calculate extra payments for this period
+                let extraPayment = 0;
+                
+                // Add monthly extra payment
+                if (extraMonthly > 0) {
+                    if (biweekly) {
+                        // Split the monthly extra payment across the two biweekly payments
+                        extraPayment += extraMonthly / 2;
+                    } else {
+                        extraPayment += extraMonthly;
+                    }
+                }
+                
+                // Add annual extra payment (apply in December or divided across payments)
+                if (extraAnnual > 0) {
+                    if (month % 12 === 0 && p === 0) { // Apply in full on December's first payment
+                        extraPayment += extraAnnual;
+                    }
+                }
+                
+                // Add one-time payment in the specified month
+                if (oneTimeAmount > 0 && month === oneTimeMonth && p === 0) {
+                    extraPayment += oneTimeAmount;
+                }
+                
+                // Make sure extra payment doesn't exceed remaining balance
+                extraPayment = Math.min(extraPayment, Math.max(0, balance - principalPayment));
+                
+                // Update balance after regular and extra payments
+                balance -= (principalPayment + extraPayment);
+                
+                // Ensure balance doesn't go negative due to floating point issues
+                if (balance < 0.01) balance = 0;
+                
+                // Store payment details
+                schedule.push({
+                    month: month,
+                    payment: paymentAmount,
+                    principal: principalPayment,
+                    interest: interestPayment,
+                    extraPayment: extraPayment,
+                    balance: balance
+                });
             }
-            
-            // Handle potential tiny negative balance due to floating point math
-            if (balance < 0.005) { 
-                balance = 0;
-            }
-            
-            schedule.push({
-                month: month,
-                payment: paymentAmount,
-                principal: principalPayment + extraPrincipalThisMonth,
-                interest: interestPayment,
-                extraPayment: extraPrincipalThisMonth,
-                balance: balance
-            });
-            
             month++;
-            
-            // Break if balance is paid off
-            if (balance === 0) {
-                break;
-            }
         }
         
         return schedule;
@@ -383,83 +409,105 @@ document.addEventListener('DOMContentLoaded', () => {
     function displayPayoffComparisonChart(standardSchedule, acceleratedSchedule) {
         if (!payoffComparisonChartCtx) return;
         
-        // Destroy previous chart if it exists
+        // Clean up old chart
         if (payoffComparisonChart) {
             payoffComparisonChart.destroy();
-            payoffComparisonChart = null;
         }
         
-        // Prepare data for chart - balance over time
-        const standardBalances = standardSchedule.map(row => row.balance);
-        const acceleratedBalances = acceleratedSchedule.map(row => row.balance);
+        // Prepare data for the chart
+        const standardLabels = standardSchedule.map(entry => entry.month);
+        const standardBalances = standardSchedule.map(entry => entry.balance);
         
-        // Get the maximum number of months from either schedule
-        const maxMonths = Math.max(standardSchedule.length, acceleratedSchedule.length);
+        const acceleratedLabels = acceleratedSchedule.map(entry => entry.month);
+        const acceleratedBalances = acceleratedSchedule.map(entry => entry.balance);
         
-        // Generate labels for all months up to the longest schedule
-        const labels = Array.from({ length: maxMonths }, (_, i) => `Month ${i + 1}`);
+        // Create datasets
+        const datasets = [
+            {
+                label: 'Standard Payment Schedule',
+                data: standardBalances,
+                borderColor: 'rgba(255, 99, 132, 1)',
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                borderWidth: 2,
+                fill: true
+            },
+            {
+                label: 'Accelerated Payment Schedule',
+                data: acceleratedBalances,
+                borderColor: 'rgba(54, 162, 235, 1)',
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderWidth: 2,
+                fill: true
+            }
+        ];
         
-        // Ensure both datasets are the same length by padding with zeros
-        // This is necessary because accelerated schedule may be shorter
-        while (acceleratedBalances.length < standardBalances.length) {
-            acceleratedBalances.push(0);
-        }
-        
-        // Set up theme-aware colors
-        const currentTheme = document.documentElement.getAttribute('data-bs-theme') || 'light';
-        const textColor = currentTheme === 'dark' ? '#f8f9fa' : '#212529';
-        const gridColor = currentTheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+        // Get current theme
+        const theme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+        const isDarkMode = theme === 'dark';
+        const textColor = isDarkMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)';
+        const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
         
         // Create the chart
         payoffComparisonChart = new Chart(payoffComparisonChartCtx, {
             type: 'line',
             data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: 'Standard Payment Schedule',
-                        data: standardBalances,
-                        borderColor: 'rgba(54, 162, 235, 1)',
-                        backgroundColor: 'rgba(54, 162, 235, 0.1)',
-                        borderWidth: 2,
-                        fill: true
-                    },
-                    {
-                        label: 'With Extra Payments',
-                        data: acceleratedBalances,
-                        borderColor: 'rgba(75, 192, 92, 1)',
-                        backgroundColor: 'rgba(75, 192, 92, 0.1)',
-                        borderWidth: 2,
-                        fill: true
-                    }
-                ]
+                labels: standardLabels.length > acceleratedLabels.length ? acceleratedLabels : standardLabels,
+                datasets: datasets
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': $' + context.raw.toFixed(2);
+                            }
+                        }
+                    },
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            color: textColor
+                        }
+                    },
                     title: {
                         display: true,
                         text: 'Loan Balance Over Time',
                         color: textColor
                     },
-                    tooltip: {
-                        mode: 'index',
-                        intersect: false,
-                        callbacks: {
-                            label: function(context) {
-                                let label = context.dataset.label || '';
-                                if (label) { label += ': '; }
-                                if (context.parsed.y !== null) {
-                                    label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.y);
+                    annotation: {
+                        annotations: {
+                            standardEnd: {
+                                type: 'line',
+                                xMin: standardLabels.length,
+                                xMax: standardLabels.length,
+                                borderColor: 'rgba(255, 99, 132, 0.5)',
+                                borderWidth: 2,
+                                borderDash: [6, 6],
+                                label: {
+                                    content: 'Standard Payoff',
+                                    enabled: true,
+                                    position: 'center',
+                                    backgroundColor: 'rgba(255, 99, 132, 0.7)',
+                                    color: 'white'
                                 }
-                                return label;
+                            },
+                            acceleratedEnd: {
+                                type: 'line',
+                                xMin: acceleratedLabels.length,
+                                xMax: acceleratedLabels.length,
+                                borderColor: 'rgba(54, 162, 235, 0.5)',
+                                borderWidth: 2,
+                                borderDash: [6, 6],
+                                label: {
+                                    content: 'Accelerated Payoff',
+                                    enabled: true,
+                                    position: 'center',
+                                    backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                                    color: 'white'
+                                }
                             }
-                        }
-                    },
-                    legend: {
-                        labels: {
-                            color: textColor
                         }
                     }
                 },
@@ -471,9 +519,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             color: textColor
                         },
                         ticks: {
-                            color: textColor,
-                            autoSkip: true,
-                            maxTicksLimit: 12
+                            color: textColor
                         },
                         grid: {
                             color: gridColor
@@ -486,14 +532,10 @@ document.addEventListener('DOMContentLoaded', () => {
                             color: textColor
                         },
                         ticks: {
-                            color: textColor,
                             callback: function(value) {
-                                return new Intl.NumberFormat('en-US', { 
-                                    style: 'currency', 
-                                    currency: 'USD',
-                                    maximumFractionDigits: 0
-                                }).format(value);
-                            }
+                                return '$' + value.toLocaleString();
+                            },
+                            color: textColor
                         },
                         grid: {
                             color: gridColor
@@ -621,59 +663,108 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (includeExtraPaymentsCheckbox && includeExtraPaymentsCheckbox.checked) {
                 // Get extra payment values
-                const extraMonthly = extraMonthlyInput && extraMonthlyInput.value ? parseFloat(extraMonthlyInput.value) : 0;
-                const extraAnnual = extraAnnualInput && extraAnnualInput.value ? parseFloat(extraAnnualInput.value) : 0;
-                const extraOneTime = extraOneTimeInput && extraOneTimeInput.value ? parseFloat(extraOneTimeInput.value) : 0;
-                const oneTimeMonth = oneTimeMonthInput && oneTimeMonthInput.value ? parseInt(oneTimeMonthInput.value) : 1;
-                const biweekly = paymentScheduleSelect && paymentScheduleSelect.value === 'biweekly';
+                const extraMonthly = parseFloat(extraMonthlyInput.value) || 0;
+                const extraAnnual = parseFloat(extraAnnualInput.value) || 0;
+                const oneTimeAmount = parseFloat(extraOneTimeInput.value) || 0;
+                const oneTimeMonth = parseInt(oneTimeMonthInput.value) || 1;
+                const paymentSchedule = paymentScheduleSelect.value;
                 
-                // Calculate accelerated amortization schedule with extra payments
-                acceleratedSchedule = generateAmortizationWithExtraPayments(
+                // Generate accelerated schedule with extra payments
+                const extraPayments = {
+                    extraMonthly: extraMonthly,
+                    extraAnnual: extraAnnual,
+                    oneTimeAmount: oneTimeAmount,
+                    oneTimeMonth: oneTimeMonth,
+                    paymentSchedule: paymentSchedule
+                };
+                
+                const acceleratedSchedule = generateAmortizationWithExtraPayments(
                     principal, 
                     monthlyInterestRate, 
                     numberOfPayments, 
                     monthlyPayment, 
-                    { extraMonthly, extraAnnual, extraOneTime, oneTimeMonth, biweekly }
+                    extraPayments
                 );
                 
-                // Calculate total interest for accelerated schedule
-                const acceleratedTotalInterest = acceleratedSchedule.reduce((total, payment) => total + payment.interest, 0);
-                
-                // Calculate savings
+                // Calculate accelerated totals
+                const acceleratedTotalPayments = acceleratedSchedule.reduce((sum, payment) => sum + payment.payment + payment.extraPayment, 0);
+                const acceleratedTotalInterest = acceleratedSchedule.reduce((sum, payment) => sum + payment.interest, 0);
+                const timeSavedMonths = standardSchedule.length - acceleratedSchedule.length;
                 const interestSaved = standardTotalInterest - acceleratedTotalInterest;
-                const timesSavedMonths = standardSchedule.length - acceleratedSchedule.length;
-                const timeSavedYears = (timesSavedMonths / 12).toFixed(1);
-                const savingsPercentage = Math.round((interestSaved / standardTotalInterest) * 100);
                 
-                // Update the comparison section
-                if (standardTermSpan) standardTermSpan.textContent = (loanTermYears).toFixed(0);
-                if (standardInterestSpan) standardInterestSpan.textContent = standardTotalInterest.toFixed(2);
+                // Calculate savings percentage
+                const savingsPercentage = (interestSaved / standardTotalInterest) * 100;
+                
+                // Update comparison display values
+                if (standardTermSpan) standardTermSpan.textContent = (standardSchedule.length / 12).toFixed(1);
                 if (acceleratedTermSpan) acceleratedTermSpan.textContent = (acceleratedSchedule.length / 12).toFixed(1);
+                if (standardInterestSpan) standardInterestSpan.textContent = standardTotalInterest.toFixed(2);
                 if (acceleratedInterestSpan) acceleratedInterestSpan.textContent = acceleratedTotalInterest.toFixed(2);
-                if (timeSavedSpan) timeSavedSpan.textContent = timeSavedYears;
+                if (timeSavedSpan) timeSavedSpan.textContent = `${Math.floor(timeSavedMonths / 12)} years, ${timeSavedMonths % 12} months`;
                 if (interestSavedSpan) interestSavedSpan.textContent = interestSaved.toFixed(2);
-                if (savingsProgressBar) {
-                    savingsProgressBar.style.width = `${savingsPercentage}%`;
-                    savingsProgressBar.setAttribute('aria-valuenow', savingsPercentage);
-                }
-                if (savingsPercentageSpan) savingsPercentageSpan.textContent = savingsPercentage;
                 
-                // Show the extra payments summary
-                if (extraPaymentsSummary) {
-                    extraPaymentsSummary.classList.remove('d-none');
+                // Update progress bar
+                if (savingsProgressBar && savingsPercentageSpan) {
+                    savingsProgressBar.style.width = `${Math.min(savingsPercentage, 100)}%`;
+                    savingsPercentageSpan.textContent = `${savingsPercentage.toFixed(1)}%`;
                 }
                 
-                // Display comparison chart
+                // Display extra payments comparison chart
                 displayPayoffComparisonChart(standardSchedule, acceleratedSchedule);
+                
+                // Display amortization schedule with extra payments
+                displayAmortizationSchedule(acceleratedSchedule);
+                
+                // Show extra payments summary section
+                if (extraPaymentsSummary) extraPaymentsSummary.classList.remove('d-none');
             } else {
-                // Hide the extra payments summary
-                if (extraPaymentsSummary) {
-                    extraPaymentsSummary.classList.add('d-none');
+                // Just show regular amortization schedule
+                displayAmortizationSchedule(standardSchedule);
+                
+                // Hide extra payments summary
+                if (extraPaymentsSummary) extraPaymentsSummary.classList.add('d-none');
+            }
+            
+            // Process additional expenses if checked
+            if (includeExtrasCheckbox && includeExtrasCheckbox.checked) {
+                // Get expenses
+                const monthlyPropertyTax = parseFloat(propertyTaxInput.value) / 12 || 0;
+                const monthlyInsurance = parseFloat(insuranceInput.value) / 12 || 0;
+                const monthlyPmi = parseFloat(pmiInput.value) || 0;
+                const monthlyHoa = parseFloat(hoaInput.value) || 0;
+                const monthlyOther = parseFloat(otherExpensesInput.value) || 0;
+                
+                // Calculate total monthly payment with additional expenses
+                const totalMonthlyExpenses = monthlyPropertyTax + monthlyInsurance + monthlyPmi + monthlyHoa + monthlyOther;
+                const totalMonthlyPayment = monthlyPayment + totalMonthlyExpenses;
+                
+                // Update display values
+                monthlyTaxSpan.textContent = monthlyPropertyTax.toFixed(2);
+                monthlyInsuranceSpan.textContent = monthlyInsurance.toFixed(2);
+                monthlyPmiSpan.textContent = monthlyPmi.toFixed(2);
+                monthlyHoaSpan.textContent = monthlyHoa.toFixed(2);
+                monthlyOtherSpan.textContent = monthlyOther.toFixed(2);
+                totalMonthlyPaymentSpan.textContent = totalMonthlyPayment.toFixed(2);
+                
+                // Show additional expenses summary
+                additionalExpensesSummary.classList.remove('d-none');
+                
+                // Update chart to include additional expenses
+                if (paymentChartCtx) {
+                    updatePaymentChart(principal, standardTotalInterest, totalMonthlyExpenses * numberOfPayments);
+                }
+            } else {
+                // Hide additional expenses summary
+                additionalExpensesSummary.classList.add('d-none');
+                
+                // Update chart without additional expenses
+                if (paymentChartCtx) {
+                    updatePaymentChart(principal, standardTotalInterest, 0);
                 }
             }
             
-            // Display results
-            if (resultDiv) resultDiv.classList.remove('d-none');
+            // Show results
+            resultDiv.classList.remove('d-none');
             
             // Update pie chart
             if (paymentChartCtx) {
@@ -687,7 +778,7 @@ document.addEventListener('DOMContentLoaded', () => {
             displayAmortizationChart(includeExtraPaymentsCheckbox && includeExtraPaymentsCheckbox.checked ? acceleratedSchedule : standardSchedule);
             
             // Scroll to results
-            resultDiv.scrollIntoView({ behavior: 'smooth' });
+            resultDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
     }
 
@@ -697,7 +788,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Destroy previous chart if it exists
         if (paymentChart) {
-            paymentChart.destroy();
+            paymentChart.destroy(); 
             paymentChart = null;
         }
         
@@ -725,28 +816,28 @@ document.addEventListener('DOMContentLoaded', () => {
             backgroundColor.push('rgba(75, 192, 192, 0.7)'); // Teal for additional expenses
         }
         
-        paymentChart = new Chart(paymentChartCtx, {
+            paymentChart = new Chart(paymentChartCtx, {
             type: 'pie',
-            data: {
+                data: {
                 labels: labels,
-                datasets: [{
+                    datasets: [{
                     data: data,
                     backgroundColor: backgroundColor,
                     borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
+                    }]
+                },
+                options: {
+                    responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
+                    plugins: {
                     title: {
                         display: true,
                         text: 'Total Payment Breakdown',
                         color: textColor
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
+                        },
+                        tooltip: {
+                             callbacks: {
+                                label: function(context) {
                                 const label = context.label || '';
                                 const value = context.raw;
                                 const total = context.dataset.data.reduce((a, b) => a + b, 0);
@@ -758,90 +849,28 @@ document.addEventListener('DOMContentLoaded', () => {
                     legend: {
                         labels: {
                             color: textColor
+                            }
                         }
                     }
                 }
-            }
-        });
-    }
+            });
+        }
 
     // Listen for theme changes to re-render chart
     window.addEventListener('themeChanged', (event) => {
-        if (paymentChart && !resultDiv.classList.contains('d-none')) {
-             // Need the original values to redraw
-             const currentPrincipal = parseFloat(totalPrincipalSpan.textContent || '0'); // Use displayed values
-             const currentInterest = parseFloat(totalInterestSpan.textContent || '0');
-             
-             if (!isNaN(currentPrincipal) && !isNaN(currentInterest)) {
-                 // Re-create chart (simpler than updating colors dynamically)
-                 if (paymentChart) paymentChart.destroy();
-                 if (paymentChartCtx) {
-                     paymentChart = new Chart(paymentChartCtx, {
-                         type: 'doughnut',
-                         data: {
-                             labels: ['Total Principal', 'Total Interest'],
-                             datasets: [{
-                                 label: 'Loan Breakdown',
-                                 data: [currentPrincipal, currentInterest],
-                                 backgroundColor: [
-                                     'rgb(54, 162, 235)',
-                                     'rgb(255, 99, 132)' 
-                                 ],
-                                 hoverOffset: 4
-                             }]
-                         },
-                        options: {
-                            responsive: true,
-                            plugins: {
-                                legend: {
-                                    position: 'top',
-                                },
-                                tooltip: {
-                                     callbacks: {
-                                        label: function(context) {
-                                            let label = context.label || '';
-                                            if (label) {
-                                                label += ': ';
-                                            }
-                                            if (context.parsed !== null) {
-                                                label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed);
-                                            }
-                                            return label;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                     });
-                 }
-             }
+        const theme = event.detail.theme;
+        // Re-render charts if they exist
+        if (paymentChart || amortizationChart || payoffComparisonChart) {
+            // We need to trigger a resize event to make the charts re-render with new theme colors
+            setTimeout(() => {
+                window.dispatchEvent(new Event('resize'));
+            }, 100);
         }
-        
-        // Update amortization bar chart
-        if (amortizationChart && !amortizationCard.classList.contains('d-none')) {
-            // Re-fetch data or redraw with new colors/styles
-            // Simplest is often to re-run the display function if schedule data is accessible
-            // Or update colors directly: 
-            const currentTheme = document.documentElement.getAttribute('data-bs-theme') || 'light';
-            const principalColor = currentTheme === 'dark' ? '#198754' : '#198754';
-            const interestColor = currentTheme === 'dark' ? '#dc3545' : '#dc3545';
-            const gridColor = currentTheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
-            const ticksColor = currentTheme === 'dark' ? '#adb5bd' : '#495057';
+    });
 
-            amortizationChart.data.datasets[0].backgroundColor = principalColor;
-            amortizationChart.data.datasets[0].borderColor = principalColor;
-            amortizationChart.data.datasets[1].backgroundColor = interestColor;
-            amortizationChart.data.datasets[1].borderColor = interestColor;
-            amortizationChart.options.plugins.title.color = ticksColor;
-            amortizationChart.options.plugins.legend.labels.color = ticksColor;
-            amortizationChart.options.scales.x.title.color = ticksColor;
-            amortizationChart.options.scales.x.ticks.color = ticksColor;
-            amortizationChart.options.scales.x.grid.color = gridColor;
-            amortizationChart.options.scales.y.title.color = ticksColor;
-            amortizationChart.options.scales.y.ticks.color = ticksColor;
-            amortizationChart.options.scales.y.grid.color = gridColor;
-            
-            amortizationChart.update();
-        }
+    // Tooltip initialization
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
     });
 }); 
