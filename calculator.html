@@ -149,6 +149,61 @@
                         </div>
                     </div>
                     
+                    <!-- Extra Payments Section -->
+                    <div class="mt-3">
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" id="include-extra-payments">
+                            <label class="form-check-label" for="include-extra-payments">Include extra payments</label>
+                        </div>
+                        
+                        <div id="extra-payments-container" class="row g-3 mt-1 d-none">
+                            <div class="col-md-4">
+                                <label for="payment-schedule" class="form-label">Payment Schedule</label>
+                                <select class="form-select" id="payment-schedule">
+                                    <option value="monthly" selected>Monthly (Standard)</option>
+                                    <option value="biweekly">Bi-Weekly (Every 2 Weeks)</option>
+                                </select>
+                                <div class="form-text">Bi-weekly payments can save thousands in interest.</div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <label for="extra-monthly" class="form-label">Extra Monthly Payment ($)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                                    <input type="number" class="form-control" id="extra-monthly" placeholder="e.g., 100" step="0.01" min="0">
+                                </div>
+                                <div class="form-text">Amount to add to each regular payment.</div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <label for="extra-annual" class="form-label">Extra Annual Payment ($)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-calendar"></i></span>
+                                    <input type="number" class="form-control" id="extra-annual" placeholder="e.g., 1000" step="0.01" min="0">
+                                </div>
+                                <div class="form-text">Additional yearly payment (like tax refund).</div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <label for="extra-one-time" class="form-label">One-Time Extra Payment ($)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-money-bill-wave"></i></span>
+                                    <input type="number" class="form-control" id="extra-one-time" placeholder="e.g., 5000" step="0.01" min="0">
+                                </div>
+                                <div class="form-text">Single lump sum payment.</div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <label for="one-time-month" class="form-label">Apply One-Time in Month #</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-calendar-day"></i></span>
+                                    <input type="number" class="form-control" id="one-time-month" placeholder="e.g., 6" step="1" min="1" value="1">
+                                </div>
+                                <div class="form-text">When to apply the one-time payment.</div>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <button type="submit" class="btn btn-primary mt-3"><i class="fas fa-check"></i> Calculate</button>
                 </form>
             </div>
@@ -184,6 +239,41 @@
                             <p>Total Interest Paid: <strong>$<span id="total-interest">0.00</span></strong></p>
                         </div>
                     </div>
+
+                    <!-- Extra Payments Comparison Section -->
+                    <div id="extra-payments-summary" class="mt-4 d-none">
+                        <div class="card border-success">
+                            <div class="card-header bg-success text-white">
+                                <h5 class="mb-0"><i class="fas fa-piggy-bank me-2"></i>Extra Payments Savings</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6>Standard Plan</h6>
+                                        <p>Payoff Time: <strong><span id="standard-term">0</span> years</strong></p>
+                                        <p>Total Interest: <strong>$<span id="standard-interest">0.00</span></strong></p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6>With Extra Payments</h6>
+                                        <p>Payoff Time: <strong><span id="accelerated-term">0</span> years</strong></p>
+                                        <p>Total Interest: <strong>$<span id="accelerated-interest">0.00</span></strong></p>
+                                        <p>Time Saved: <strong><span id="time-saved">0</span> years</strong></p>
+                                        <p>Interest Saved: <strong class="text-success">$<span id="interest-saved">0.00</span></strong></p>
+                                    </div>
+                                </div>
+                                <div class="progress mt-3" style="height: 25px;">
+                                    <div class="progress-bar bg-success" role="progressbar" id="savings-progress" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                                <p class="text-center mt-2">Interest saved: <strong class="text-success"><span id="savings-percentage">0</span>%</strong> of original interest</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Comparison Chart -->
+                        <div class="mt-3" style="height: 300px;">
+                            <canvas id="payoff-comparison-chart"></canvas>
+                        </div>
+                    </div>
+
                     <div class="mt-3" style="max-height: 250px;">
                         <canvas id="paymentChart"></canvas>
                     </div>

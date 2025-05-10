@@ -20,6 +20,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const additionalExpensesSummary = document.getElementById('additional-expenses-summary');
     const calculationNote = document.getElementById('calculation-note');
     
+    // Extra payment elements
+    const includeExtraPaymentsCheckbox = document.getElementById('include-extra-payments');
+    const extraPaymentsContainer = document.getElementById('extra-payments-container');
+    const paymentScheduleSelect = document.getElementById('payment-schedule');
+    const extraMonthlyInput = document.getElementById('extra-monthly');
+    const extraAnnualInput = document.getElementById('extra-annual');
+    const extraOneTimeInput = document.getElementById('extra-one-time');
+    const oneTimeMonthInput = document.getElementById('one-time-month');
+    const extraPaymentsSummary = document.getElementById('extra-payments-summary');
+    
+    // Extra payment comparison elements
+    const standardTermSpan = document.getElementById('standard-term');
+    const standardInterestSpan = document.getElementById('standard-interest');
+    const acceleratedTermSpan = document.getElementById('accelerated-term');
+    const acceleratedInterestSpan = document.getElementById('accelerated-interest');
+    const timeSavedSpan = document.getElementById('time-saved');
+    const interestSavedSpan = document.getElementById('interest-saved');
+    const savingsProgressBar = document.getElementById('savings-progress');
+    const savingsPercentageSpan = document.getElementById('savings-percentage');
+    const payoffComparisonChartCtx = document.getElementById('payoff-comparison-chart')?.getContext('2d');
+    
     // Additional expense outputs
     const monthlyTaxSpan = document.getElementById('monthly-tax');
     const monthlyInsuranceSpan = document.getElementById('monthly-insurance');
@@ -40,6 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let paymentChart = null;
     let amortizationChart = null;
+    let payoffComparisonChart = null;
     
     // Toggle additional expenses section
     if (includeExtrasCheckbox) {
@@ -48,6 +70,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 extrasContainer.classList.remove('d-none');
             } else {
                 extrasContainer.classList.add('d-none');
+            }
+        });
+    }
+    
+    // Toggle extra payments section
+    if (includeExtraPaymentsCheckbox) {
+        includeExtraPaymentsCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                extraPaymentsContainer.classList.remove('d-none');
+            } else {
+                extraPaymentsContainer.classList.add('d-none');
             }
         });
     }
@@ -141,6 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <th>Payment</th>
                         <th>Principal</th>
                         <th>Interest</th>
+                        ${schedule[0].hasOwnProperty('extraPayment') ? '<th>Extra Payment</th>' : ''}
                         <th>Balance</th>
                     </tr>
                 </thead>
@@ -154,6 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td>$${row.payment.toFixed(2)}</td>
                     <td>$${row.principal.toFixed(2)}</td>
                     <td>$${row.interest.toFixed(2)}</td>
+                    ${row.hasOwnProperty('extraPayment') ? `<td>$${row.extraPayment.toFixed(2)}</td>` : ''}
                     <td>$${row.balance.toFixed(2)}</td>
                 </tr>
             `;
@@ -275,6 +310,200 @@ document.addEventListener('DOMContentLoaded', () => {
          // Card visibility handled in main submit handler
     }
 
+    // --- Generate Amortization Schedule with Extra Payments ---
+    function generateAmortizationWithExtraPayments(principal, monthlyInterestRate, numberOfPayments, monthlyPayment, extraPayments) {
+        let schedule = [];
+        let balance = principal;
+        let month = 1;
+        
+        // Destructure extra payments object for easier access
+        const { extraMonthly, extraAnnual, extraOneTime, oneTimeMonth, biweekly } = extraPayments;
+        
+        // For bi-weekly payment calculation
+        const biweeklyPayment = biweekly ? monthlyPayment / 2 : 0;
+        const biweeklyExtraPerMonth = biweekly ? (biweeklyPayment * 26) / 12 - monthlyPayment : 0;
+        
+        while (balance > 0 && month <= numberOfPayments * 1.5) { // Allow for up to 50% longer term as safeguard
+            let extraPrincipalThisMonth = extraMonthly + (biweekly ? biweeklyExtraPerMonth : 0);
+            
+            // Add annual extra payment in December (month 12, 24, 36, etc.)
+            if (extraAnnual > 0 && month % 12 === 0) {
+                extraPrincipalThisMonth += extraAnnual;
+            }
+            
+            // Add one-time extra payment in specified month
+            if (extraOneTime > 0 && month === oneTimeMonth) {
+                extraPrincipalThisMonth += extraOneTime;
+            }
+            
+            let interestPayment = balance * monthlyInterestRate;
+            let principalPayment = monthlyPayment - interestPayment;
+            let paymentAmount = monthlyPayment;
+            
+            // Adjust for final payment
+            if (balance < (monthlyPayment + extraPrincipalThisMonth)) {
+                principalPayment = balance;
+                interestPayment = balance * monthlyInterestRate;
+                paymentAmount = principalPayment + interestPayment;
+                balance = 0;
+            } else {
+                // Apply extra payment directly to principal
+                balance = balance - principalPayment - extraPrincipalThisMonth;
+                
+                // Include extra payment in total payment amount
+                paymentAmount = monthlyPayment + extraPrincipalThisMonth;
+            }
+            
+            // Handle potential tiny negative balance due to floating point math
+            if (balance < 0.005) { 
+                balance = 0;
+            }
+            
+            schedule.push({
+                month: month,
+                payment: paymentAmount,
+                principal: principalPayment + extraPrincipalThisMonth,
+                interest: interestPayment,
+                extraPayment: extraPrincipalThisMonth,
+                balance: balance
+            });
+            
+            month++;
+            
+            // Break if balance is paid off
+            if (balance === 0) {
+                break;
+            }
+        }
+        
+        return schedule;
+    }
+
+    // --- Display Comparison Chart between Standard and Accelerated Payoff ---
+    function displayPayoffComparisonChart(standardSchedule, acceleratedSchedule) {
+        if (!payoffComparisonChartCtx) return;
+        
+        // Destroy previous chart if it exists
+        if (payoffComparisonChart) {
+            payoffComparisonChart.destroy();
+            payoffComparisonChart = null;
+        }
+        
+        // Prepare data for chart - balance over time
+        const standardBalances = standardSchedule.map(row => row.balance);
+        const acceleratedBalances = acceleratedSchedule.map(row => row.balance);
+        
+        // Get the maximum number of months from either schedule
+        const maxMonths = Math.max(standardSchedule.length, acceleratedSchedule.length);
+        
+        // Generate labels for all months up to the longest schedule
+        const labels = Array.from({ length: maxMonths }, (_, i) => `Month ${i + 1}`);
+        
+        // Ensure both datasets are the same length by padding with zeros
+        // This is necessary because accelerated schedule may be shorter
+        while (acceleratedBalances.length < standardBalances.length) {
+            acceleratedBalances.push(0);
+        }
+        
+        // Set up theme-aware colors
+        const currentTheme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+        const textColor = currentTheme === 'dark' ? '#f8f9fa' : '#212529';
+        const gridColor = currentTheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+        
+        // Create the chart
+        payoffComparisonChart = new Chart(payoffComparisonChartCtx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Standard Payment Schedule',
+                        data: standardBalances,
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                        borderWidth: 2,
+                        fill: true
+                    },
+                    {
+                        label: 'With Extra Payments',
+                        data: acceleratedBalances,
+                        borderColor: 'rgba(75, 192, 92, 1)',
+                        backgroundColor: 'rgba(75, 192, 92, 0.1)',
+                        borderWidth: 2,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Loan Balance Over Time',
+                        color: textColor
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) { label += ': '; }
+                                if (context.parsed.y !== null) {
+                                    label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.y);
+                                }
+                                return label;
+                            }
+                        }
+                    },
+                    legend: {
+                        labels: {
+                            color: textColor
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Month',
+                            color: textColor
+                        },
+                        ticks: {
+                            color: textColor,
+                            autoSkip: true,
+                            maxTicksLimit: 12
+                        },
+                        grid: {
+                            color: gridColor
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Remaining Balance ($)',
+                            color: textColor
+                        },
+                        ticks: {
+                            color: textColor,
+                            callback: function(value) {
+                                return new Intl.NumberFormat('en-US', { 
+                                    style: 'currency', 
+                                    currency: 'USD',
+                                    maximumFractionDigits: 0
+                                }).format(value);
+                            }
+                        },
+                        grid: {
+                            color: gridColor
+                        }
+                    }
+                }
+            }
+        });
+    }
+
     // --- Handle Form Submission ---
     if (calculatorForm) {
         calculatorForm.addEventListener('submit', function(e) {
@@ -377,27 +606,85 @@ document.addEventListener('DOMContentLoaded', () => {
             if (monthlyPaymentSpan) monthlyPaymentSpan.textContent = monthlyPayment.toFixed(2);
             if (totalMonthlyPaymentSpan) totalMonthlyPaymentSpan.textContent = totalMonthlyPayment.toFixed(2);
             
-            // Total amounts over the life of the loan
-            const totalInterest = (monthlyPayment * numberOfPayments) - principal;
-            if (totalPrincipalSpan) totalPrincipalSpan.textContent = principal.toFixed(2);
-            if (totalInterestSpan) totalInterestSpan.textContent = totalInterest.toFixed(2);
+            // Generate standard amortization schedule
+            const standardSchedule = generateAmortizationSchedule(principal, monthlyInterestRate, numberOfPayments, monthlyPayment);
             
-            // Generate amortization schedule
-            const schedule = generateAmortizationSchedule(principal, monthlyInterestRate, numberOfPayments, monthlyPayment);
+            // Calculate total interest for standard schedule
+            const standardTotalInterest = standardSchedule.reduce((total, payment) => total + payment.interest, 0);
+            
+            // Total amounts over the life of the loan
+            if (totalPrincipalSpan) totalPrincipalSpan.textContent = principal.toFixed(2);
+            if (totalInterestSpan) totalInterestSpan.textContent = standardTotalInterest.toFixed(2);
+            
+            // Handle extra payments if included
+            let acceleratedSchedule = standardSchedule;
+            
+            if (includeExtraPaymentsCheckbox && includeExtraPaymentsCheckbox.checked) {
+                // Get extra payment values
+                const extraMonthly = extraMonthlyInput && extraMonthlyInput.value ? parseFloat(extraMonthlyInput.value) : 0;
+                const extraAnnual = extraAnnualInput && extraAnnualInput.value ? parseFloat(extraAnnualInput.value) : 0;
+                const extraOneTime = extraOneTimeInput && extraOneTimeInput.value ? parseFloat(extraOneTimeInput.value) : 0;
+                const oneTimeMonth = oneTimeMonthInput && oneTimeMonthInput.value ? parseInt(oneTimeMonthInput.value) : 1;
+                const biweekly = paymentScheduleSelect && paymentScheduleSelect.value === 'biweekly';
+                
+                // Calculate accelerated amortization schedule with extra payments
+                acceleratedSchedule = generateAmortizationWithExtraPayments(
+                    principal, 
+                    monthlyInterestRate, 
+                    numberOfPayments, 
+                    monthlyPayment, 
+                    { extraMonthly, extraAnnual, extraOneTime, oneTimeMonth, biweekly }
+                );
+                
+                // Calculate total interest for accelerated schedule
+                const acceleratedTotalInterest = acceleratedSchedule.reduce((total, payment) => total + payment.interest, 0);
+                
+                // Calculate savings
+                const interestSaved = standardTotalInterest - acceleratedTotalInterest;
+                const timesSavedMonths = standardSchedule.length - acceleratedSchedule.length;
+                const timeSavedYears = (timesSavedMonths / 12).toFixed(1);
+                const savingsPercentage = Math.round((interestSaved / standardTotalInterest) * 100);
+                
+                // Update the comparison section
+                if (standardTermSpan) standardTermSpan.textContent = (loanTermYears).toFixed(0);
+                if (standardInterestSpan) standardInterestSpan.textContent = standardTotalInterest.toFixed(2);
+                if (acceleratedTermSpan) acceleratedTermSpan.textContent = (acceleratedSchedule.length / 12).toFixed(1);
+                if (acceleratedInterestSpan) acceleratedInterestSpan.textContent = acceleratedTotalInterest.toFixed(2);
+                if (timeSavedSpan) timeSavedSpan.textContent = timeSavedYears;
+                if (interestSavedSpan) interestSavedSpan.textContent = interestSaved.toFixed(2);
+                if (savingsProgressBar) {
+                    savingsProgressBar.style.width = `${savingsPercentage}%`;
+                    savingsProgressBar.setAttribute('aria-valuenow', savingsPercentage);
+                }
+                if (savingsPercentageSpan) savingsPercentageSpan.textContent = savingsPercentage;
+                
+                // Show the extra payments summary
+                if (extraPaymentsSummary) {
+                    extraPaymentsSummary.classList.remove('d-none');
+                }
+                
+                // Display comparison chart
+                displayPayoffComparisonChart(standardSchedule, acceleratedSchedule);
+            } else {
+                // Hide the extra payments summary
+                if (extraPaymentsSummary) {
+                    extraPaymentsSummary.classList.add('d-none');
+                }
+            }
             
             // Display results
             if (resultDiv) resultDiv.classList.remove('d-none');
             
             // Update pie chart
             if (paymentChartCtx) {
-                updatePaymentChart(principal, totalInterest, additionalMonthlyExpenses * numberOfPayments);
+                updatePaymentChart(principal, standardTotalInterest, additionalMonthlyExpenses * standardSchedule.length);
             }
             
-            // Display amortization schedule
-            displayAmortizationSchedule(schedule);
+            // Display amortization schedule (use the appropriate schedule)
+            displayAmortizationSchedule(includeExtraPaymentsCheckbox && includeExtraPaymentsCheckbox.checked ? acceleratedSchedule : standardSchedule);
             
             // Display amortization chart
-            displayAmortizationChart(schedule);
+            displayAmortizationChart(includeExtraPaymentsCheckbox && includeExtraPaymentsCheckbox.checked ? acceleratedSchedule : standardSchedule);
             
             // Scroll to results
             resultDiv.scrollIntoView({ behavior: 'smooth' });
