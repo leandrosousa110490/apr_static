@@ -10,6 +10,8 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('nav-budget')?.classList.add('active');
     } else if (currentPage === 'apr_checker.html') {
         document.getElementById('nav-apr')?.classList.add('active');
+    } else if (currentPage === 'tip_calculator.html') {
+        document.getElementById('nav-tip')?.classList.add('active');
     }
 
     // --- Dark Mode Toggle --- 
