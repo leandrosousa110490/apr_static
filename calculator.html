@@ -97,6 +97,58 @@
                              </div>
                         </div>
                     </div>
+                    
+                    <!-- Optional Expenses Section -->
+                    <div class="mt-3">
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" id="include-extras">
+                            <label class="form-check-label" for="include-extras">Include additional monthly expenses</label>
+                        </div>
+                        
+                        <div id="extras-container" class="row g-3 mt-1 d-none">
+                            <div class="col-md-4">
+                                <label for="property-tax" class="form-label">Property Tax ($/year)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-landmark"></i></span>
+                                    <input type="number" class="form-control" id="property-tax" placeholder="e.g., 2400" step="0.01" min="0">
+                                    <div class="invalid-feedback" id="propertyTaxError"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="insurance" class="form-label">Insurance ($/year)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-shield-alt"></i></span>
+                                    <input type="number" class="form-control" id="insurance" placeholder="e.g., 1200" step="0.01" min="0">
+                                    <div class="invalid-feedback" id="insuranceError"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="pmi" class="form-label">PMI ($/month)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-home"></i></span>
+                                    <input type="number" class="form-control" id="pmi" placeholder="e.g., 55" step="0.01" min="0">
+                                    <div class="invalid-feedback" id="pmiError"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="hoa" class="form-label">HOA Fees ($/month)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-building"></i></span>
+                                    <input type="number" class="form-control" id="hoa" placeholder="e.g., 100" step="0.01" min="0">
+                                    <div class="invalid-feedback" id="hoaError"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="other-expenses" class="form-label">Other Expenses ($/month)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-file-invoice-dollar"></i></span>
+                                    <input type="number" class="form-control" id="other-expenses" placeholder="e.g., 50" step="0.01" min="0">
+                                    <div class="invalid-feedback" id="otherExpensesError"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <button type="submit" class="btn btn-primary mt-3"><i class="fas fa-check"></i> Calculate</button>
                 </form>
             </div>
@@ -113,16 +165,31 @@
                     <h4 class="mb-0"><i class="fas fa-poll me-2"></i>Results</h4>
                 </div>
                 <div class="card-body">
-                    <p>Estimated Monthly Payment: <strong>$<span id="monthly-payment">0.00</span></strong></p>
-                    <hr>
-                    <p>Total Principal Paid: $<span id="total-principal">0.00</span></p>
-                    <p>Total Interest Paid: $<span id="total-interest">0.00</span></p>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Monthly Payment Breakdown</h5>
+                            <p>Principal & Interest: <strong>$<span id="monthly-payment">0.00</span></strong></p>
+                            <div id="additional-expenses-summary" class="d-none">
+                                <p>Property Tax: <strong>$<span id="monthly-tax">0.00</span>/month</strong></p>
+                                <p>Insurance: <strong>$<span id="monthly-insurance">0.00</span>/month</strong></p>
+                                <p>PMI: <strong>$<span id="monthly-pmi">0.00</span>/month</strong></p>
+                                <p>HOA Fees: <strong>$<span id="monthly-hoa">0.00</span>/month</strong></p>
+                                <p>Other Expenses: <strong>$<span id="monthly-other">0.00</span>/month</strong></p>
+                                <p class="fw-bold">Total Monthly Payment: <strong>$<span id="total-monthly-payment">0.00</span></strong></p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Loan Totals</h5>
+                            <p>Total Principal Paid: <strong>$<span id="total-principal">0.00</span></strong></p>
+                            <p>Total Interest Paid: <strong>$<span id="total-interest">0.00</span></strong></p>
+                        </div>
+                    </div>
                     <div class="mt-3" style="max-height: 250px;">
                         <canvas id="paymentChart"></canvas>
                     </div>
                 </div>
-                <div class="card-footer text-muted">
-                    Calculation includes principal and interest only. It does not include taxes, insurance, or PMI.
+                <div class="card-footer text-muted" id="calculation-note">
+                    Calculation includes principal and interest only. It does not include taxes, insurance, or other expenses.
                 </div>
             </div>
         </div>

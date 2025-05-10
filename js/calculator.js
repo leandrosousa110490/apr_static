@@ -8,6 +8,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const monthlyPaymentSpan = document.getElementById('monthly-payment');
     const totalPrincipalSpan = document.getElementById('total-principal');
     const totalInterestSpan = document.getElementById('total-interest');
+    
+    // Additional expense inputs
+    const includeExtrasCheckbox = document.getElementById('include-extras');
+    const extrasContainer = document.getElementById('extras-container');
+    const propertyTaxInput = document.getElementById('property-tax');
+    const insuranceInput = document.getElementById('insurance');
+    const pmiInput = document.getElementById('pmi');
+    const hoaInput = document.getElementById('hoa');
+    const otherExpensesInput = document.getElementById('other-expenses');
+    const additionalExpensesSummary = document.getElementById('additional-expenses-summary');
+    const calculationNote = document.getElementById('calculation-note');
+    
+    // Additional expense outputs
+    const monthlyTaxSpan = document.getElementById('monthly-tax');
+    const monthlyInsuranceSpan = document.getElementById('monthly-insurance');
+    const monthlyPmiSpan = document.getElementById('monthly-pmi');
+    const monthlyHoaSpan = document.getElementById('monthly-hoa');
+    const monthlyOtherSpan = document.getElementById('monthly-other');
+    const totalMonthlyPaymentSpan = document.getElementById('total-monthly-payment');
+    
     const paymentChartCtx = document.getElementById('paymentChart')?.getContext('2d');
     const amortizationCard = document.getElementById('amortization-card');
     const amortizationScheduleDiv = document.getElementById('amortization-schedule');
@@ -20,6 +40,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let paymentChart = null;
     let amortizationChart = null;
+    
+    // Toggle additional expenses section
+    if (includeExtrasCheckbox) {
+        includeExtrasCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                extrasContainer.classList.remove('d-none');
+            } else {
+                extrasContainer.classList.add('d-none');
+            }
+        });
+    }
 
     // --- Input Validation Function ---
     const validateInputs = () => {
@@ -244,100 +275,208 @@ document.addEventListener('DOMContentLoaded', () => {
          // Card visibility handled in main submit handler
     }
 
-    // --- Form Submission Handler ---
-    calculatorForm?.addEventListener('submit', (e) => {
-        e.preventDefault(); // Prevent default form submission
+    // --- Handle Form Submission ---
+    if (calculatorForm) {
+        calculatorForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (!validateInputs()) {
+                return; // Stop if validation fails
+            }
+            
+            const principal = parseFloat(loanAmountInput.value);
+            const annualInterestRate = parseFloat(interestRateInput.value);
+            const loanTermYears = parseInt(loanTermInput.value);
+            
+            const monthlyInterestRate = (annualInterestRate / 100) / 12;
+            const numberOfPayments = loanTermYears * 12;
+            
+            let monthlyPayment = 0;
+            
+            // Calculate monthly payment (principal and interest)
+            if (annualInterestRate === 0) {
+                // Handle 0% interest case
+                monthlyPayment = principal / numberOfPayments;
+            } else {
+                // Standard formula for monthly payment
+                monthlyPayment = principal * monthlyInterestRate * Math.pow(1 + monthlyInterestRate, numberOfPayments) / (Math.pow(1 + monthlyInterestRate, numberOfPayments) - 1);
+            }
+            
+            // Calculate additional expenses if included
+            let additionalMonthlyExpenses = 0;
+            let monthlyTax = 0;
+            let monthlyInsurance = 0;
+            let monthlyPmi = 0;
+            let monthlyHoa = 0;
+            let monthlyOther = 0;
+            
+            if (includeExtrasCheckbox && includeExtrasCheckbox.checked) {
+                // Calculate monthly property tax
+                if (propertyTaxInput && propertyTaxInput.value) {
+                    const annualTax = parseFloat(propertyTaxInput.value);
+                    monthlyTax = annualTax / 12;
+                    additionalMonthlyExpenses += monthlyTax;
+                }
+                
+                // Calculate monthly insurance
+                if (insuranceInput && insuranceInput.value) {
+                    const annualInsurance = parseFloat(insuranceInput.value);
+                    monthlyInsurance = annualInsurance / 12;
+                    additionalMonthlyExpenses += monthlyInsurance;
+                }
+                
+                // Add PMI if provided
+                if (pmiInput && pmiInput.value) {
+                    monthlyPmi = parseFloat(pmiInput.value);
+                    additionalMonthlyExpenses += monthlyPmi;
+                }
+                
+                // Add HOA fees if provided
+                if (hoaInput && hoaInput.value) {
+                    monthlyHoa = parseFloat(hoaInput.value);
+                    additionalMonthlyExpenses += monthlyHoa;
+                }
+                
+                // Add other expenses if provided
+                if (otherExpensesInput && otherExpensesInput.value) {
+                    monthlyOther = parseFloat(otherExpensesInput.value);
+                    additionalMonthlyExpenses += monthlyOther;
+                }
+                
+                // Show additional expenses in the summary
+                if (additionalExpensesSummary) {
+                    additionalExpensesSummary.classList.remove('d-none');
+                }
+                
+                // Update the expense spans
+                if (monthlyTaxSpan) monthlyTaxSpan.textContent = monthlyTax.toFixed(2);
+                if (monthlyInsuranceSpan) monthlyInsuranceSpan.textContent = monthlyInsurance.toFixed(2);
+                if (monthlyPmiSpan) monthlyPmiSpan.textContent = monthlyPmi.toFixed(2);
+                if (monthlyHoaSpan) monthlyHoaSpan.textContent = monthlyHoa.toFixed(2);
+                if (monthlyOtherSpan) monthlyOtherSpan.textContent = monthlyOther.toFixed(2);
+                
+                // Update calculation note
+                if (calculationNote) {
+                    calculationNote.textContent = 'Calculation includes principal, interest, and all additional expenses.';
+                }
+            } else {
+                // Hide additional expenses in the summary
+                if (additionalExpensesSummary) {
+                    additionalExpensesSummary.classList.add('d-none');
+                }
+                
+                // Update calculation note
+                if (calculationNote) {
+                    calculationNote.textContent = 'Calculation includes principal and interest only. It does not include taxes, insurance, or other expenses.';
+                }
+            }
+            
+            const totalMonthlyPayment = monthlyPayment + additionalMonthlyExpenses;
+            
+            // Update the payment result
+            if (monthlyPaymentSpan) monthlyPaymentSpan.textContent = monthlyPayment.toFixed(2);
+            if (totalMonthlyPaymentSpan) totalMonthlyPaymentSpan.textContent = totalMonthlyPayment.toFixed(2);
+            
+            // Total amounts over the life of the loan
+            const totalInterest = (monthlyPayment * numberOfPayments) - principal;
+            if (totalPrincipalSpan) totalPrincipalSpan.textContent = principal.toFixed(2);
+            if (totalInterestSpan) totalInterestSpan.textContent = totalInterest.toFixed(2);
+            
+            // Generate amortization schedule
+            const schedule = generateAmortizationSchedule(principal, monthlyInterestRate, numberOfPayments, monthlyPayment);
+            
+            // Display results
+            if (resultDiv) resultDiv.classList.remove('d-none');
+            
+            // Update pie chart
+            if (paymentChartCtx) {
+                updatePaymentChart(principal, totalInterest, additionalMonthlyExpenses * numberOfPayments);
+            }
+            
+            // Display amortization schedule
+            displayAmortizationSchedule(schedule);
+            
+            // Display amortization chart
+            displayAmortizationChart(schedule);
+            
+            // Scroll to results
+            resultDiv.scrollIntoView({ behavior: 'smooth' });
+        });
+    }
 
-        // Destroy previous charts immediately
+    // --- Update Payment Breakdown Chart ---
+    function updatePaymentChart(principal, totalInterest, totalAdditionalExpenses) {
+        if (!paymentChartCtx) return;
+        
+        // Destroy previous chart if it exists
         if (paymentChart) {
-            paymentChart.destroy(); 
+            paymentChart.destroy();
             paymentChart = null;
         }
-        if (amortizationChart) {
-            amortizationChart.destroy();
-             amortizationChart = null;
+        
+        const currentTheme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+        const textColor = currentTheme === 'dark' ? '#f8f9fa' : '#212529';
+        
+        // Create datasets based on whether additional expenses are included
+        const datasets = [];
+        const labels = [];
+        const data = [];
+        const backgroundColor = [];
+        
+        // Always include principal and interest
+        labels.push('Principal', 'Interest');
+        data.push(principal, totalInterest);
+        backgroundColor.push(
+            'rgba(54, 162, 235, 0.7)', // Blue for principal
+            'rgba(255, 99, 132, 0.7)'  // Red for interest
+        );
+        
+        // Add additional expenses if included
+        if (includeExtrasCheckbox && includeExtrasCheckbox.checked && totalAdditionalExpenses > 0) {
+            labels.push('Additional Expenses');
+            data.push(totalAdditionalExpenses);
+            backgroundColor.push('rgba(75, 192, 192, 0.7)'); // Teal for additional expenses
         }
-
-        // Validate inputs first
-        if (!validateInputs()) {
-            resultDiv.classList.add('d-none'); // Hide results if validation fails
-            amortizationCard.classList.add('d-none'); // Hide amortization card on validation fail
-            return; // Stop calculation
-        }
-
-        // Get validated values (we know they are valid numbers now)
-        const principal = parseFloat(loanAmountInput.value);
-        const annualInterestRate = parseFloat(interestRateInput.value) / 100;
-        const years = parseInt(loanTermInput.value);
-
-        const monthlyInterestRate = annualInterestRate / 12;
-        const numberOfPayments = years * 12;
-
-        let monthlyPayment;
-        // Calculate Monthly Payment
-        if (monthlyInterestRate === 0) { // Handle 0% interest rate
-             monthlyPayment = principal / numberOfPayments;
-        } else {
-             monthlyPayment = principal * (monthlyInterestRate * Math.pow(1 + monthlyInterestRate, numberOfPayments)) /
-                             (Math.pow(1 + monthlyInterestRate, numberOfPayments) - 1);
-        }
-
-        const totalPayment = monthlyPayment * numberOfPayments;
-        const totalInterest = totalPayment - principal;
-
-        // Display results
-        monthlyPaymentSpan.textContent = monthlyPayment.toFixed(2);
-        totalPrincipalSpan.textContent = principal.toFixed(2);
-        totalInterestSpan.textContent = totalInterest.toFixed(2);
-        resultDiv.classList.remove('d-none'); // Show the result section
-
-        // Generate and Display Amortization Schedule
-        const schedule = generateAmortizationSchedule(principal, monthlyInterestRate, numberOfPayments, monthlyPayment);
-        displayAmortizationSchedule(schedule);
-        displayAmortizationChart(schedule);
-        amortizationCard.classList.remove('d-none'); // Show the card containing table and chart
-
-        // Update or create the chart
-        if (paymentChartCtx) {
-            paymentChart = new Chart(paymentChartCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Total Principal', 'Total Interest'],
-                    datasets: [{
-                        label: 'Loan Breakdown',
-                        data: [principal, totalInterest],
-                        backgroundColor: [
-                            'rgb(54, 162, 235)', // Blue for principal
-                            'rgb(255, 99, 132)'  // Red for interest
-                        ],
-                        hoverOffset: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        },
-                        tooltip: {
-                             callbacks: {
-                                label: function(context) {
-                                    let label = context.label || '';
-                                    if (label) {
-                                        label += ': ';
-                                    }
-                                    if (context.parsed !== null) {
-                                        label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed);
-                                    }
-                                    return label;
-                                }
+        
+        paymentChart = new Chart(paymentChartCtx, {
+            type: 'pie',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: backgroundColor,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Total Payment Breakdown',
+                        color: textColor
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return `${label}: $${value.toFixed(2)} (${percentage}%)`;
                             }
+                        }
+                    },
+                    legend: {
+                        labels: {
+                            color: textColor
                         }
                     }
                 }
-            });
-        }
-    });
+            }
+        });
+    }
 
     // Listen for theme changes to re-render chart
     window.addEventListener('themeChanged', (event) => {
