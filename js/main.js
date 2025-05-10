@@ -19,23 +19,36 @@ document.addEventListener('DOMContentLoaded', () => {
     const lightIcon = document.getElementById('theme-icon-light');
     const darkIcon = document.getElementById('theme-icon-dark');
     const htmlElement = document.documentElement; // Get the <html> element
+    const topInfoBar = document.getElementById('top-info-bar');
 
     // Function to set theme
     const setTheme = (theme) => {
         htmlElement.setAttribute('data-bs-theme', theme);
         localStorage.setItem('theme', theme); // Save preference
+        
         // Update icon visibility
         if (theme === 'dark') {
             lightIcon?.classList.add('d-none');
             darkIcon?.classList.remove('d-none');
             themeToggleBtn?.classList.remove('btn-outline-secondary');
             themeToggleBtn?.classList.add('btn-outline-light');
+            // Update top info bar color
+            if (topInfoBar) {
+                topInfoBar.classList.remove('bg-primary');
+                topInfoBar.classList.add('bg-dark');
+            }
         } else {
             lightIcon?.classList.remove('d-none');
             darkIcon?.classList.add('d-none');
             themeToggleBtn?.classList.remove('btn-outline-light');
             themeToggleBtn?.classList.add('btn-outline-secondary');
+            // Update top info bar color
+            if (topInfoBar) {
+                topInfoBar.classList.remove('bg-dark');
+                topInfoBar.classList.add('bg-primary');
+            }
         }
+        
         // Dispatch custom event for other scripts (like chart) to listen to
         window.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme: theme } }));
     };

@@ -9,9 +9,47 @@ body {
     /* padding-bottom: 60px; Footer height handled by flex */
 }
 
+/* Top Info Bar */
+#top-info-bar {
+    font-size: 0.85rem;
+}
+
+#top-info-bar a:hover {
+    text-decoration: underline !important;
+}
+
+/* Buy Me a Coffee button */
+.btn-outline-warning:hover {
+    color: #000 !important;
+}
+
 /* Navbar Customization (Optional) */
 .navbar-brand {
     font-weight: bold;
+}
+
+/* Footer customization */
+footer h5 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+footer .list-unstyled li {
+    margin-bottom: 0.5rem;
+}
+
+footer .list-unstyled a:hover {
+    text-decoration: underline !important;
+}
+
+footer .social-icons a:hover {
+    opacity: 0.8;
+}
+
+/* Dark theme footer adjustments */
+[data-bs-theme="dark"] footer {
+    background-color: #212529 !important;
 }
 
 /* Ensure main content takes available space */
