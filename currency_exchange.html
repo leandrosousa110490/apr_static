@@ -241,6 +241,11 @@
         </div>
     </main>
 
+    <!-- Floating Action Button -->
+    <button id="fab-calculator" class="btn btn-primary rounded-circle shadow fab" type="button" data-bs-toggle="modal" data-bs-target="#dynamicCalculatorModal" title="Open Quick Calculator">
+        <i class="fas fa-calculator"></i>
+    </button>
+
     <!-- Footer -->
     <footer class="bg-dark text-white py-4 mt-auto">
         <div class="container">
@@ -275,7 +280,6 @@
                 <div class="col-md-6 text-center text-md-end">
                     <a href="#" class="text-light me-2" title="Privacy Policy"><i class="fas fa-lock"></i></a>
                     <a href="#" class="text-light me-2" title="Terms of Service"><i class="fas fa-file-contract"></i></a>
-                    <a href="https://github.com/yourusername/finance-tools" target="_blank" class="text-light" title="GitHub"><i class="fab fa-github"></i></a>
                 </div>
             </div>
         </div>
@@ -292,5 +296,52 @@
 
     <!-- Currency Exchange JS -->
     <script src="js/currency_exchange.js"></script>
+    
+    <!-- Dynamic Calculator JS -->
+    <script src="js/dynamic_calculator.js"></script>
+    
+    <!-- Dynamic Calculator Modal -->
+    <div class="modal fade" id="dynamicCalculatorModal" tabindex="-1" aria-labelledby="dynamicCalculatorModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered calculator-modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="dynamicCalculatorModalLabel"><i class="fas fa-calculator me-2"></i>Quick Calculator</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body calculator-modal-body">
+                    <input type="text" id="calc-display" class="form-control form-control-lg text-end mb-3" value="0" readonly>
+                    <div class="row g-2">
+                        <div class="col-3"><button class="btn btn-light w-100 calc-btn" data-value="clear">C</button></div>
+                        <div class="col-3"><button class="btn btn-light w-100 calc-btn" data-value="backspace" aria-label="Backspace"><i class="fas fa-backspace"></i></button></div>
+                        <div class="col-3"><button class="btn btn-light w-100 calc-btn" data-value="%">%</button></div>
+                        <div class="col-3"><button class="btn btn-warning w-100 calc-btn operator" data-value="/">&divide;</button></div>
+                    </div>
+                     <div class="row g-2 mt-2">
+                        <div class="col-3"><button class="btn btn-secondary w-100 calc-btn number" data-value="7">7</button></div>
+                        <div class="col-3"><button class="btn btn-secondary w-100 calc-btn number" data-value="8">8</button></div>
+                        <div class="col-3"><button class="btn btn-secondary w-100 calc-btn number" data-value="9">9</button></div>
+                        <div class="col-3"><button class="btn btn-warning w-100 calc-btn operator" data-value="*">&times;</button></div>
+                    </div>
+                    <div class="row g-2 mt-2">
+                        <div class="col-3"><button class="btn btn-secondary w-100 calc-btn number" data-value="4">4</button></div>
+                        <div class="col-3"><button class="btn btn-secondary w-100 calc-btn number" data-value="5">5</button></div>
+                        <div class="col-3"><button class="btn btn-secondary w-100 calc-btn number" data-value="6">6</button></div>
+                        <div class="col-3"><button class="btn btn-warning w-100 calc-btn operator" data-value="-">&minus;</button></div>
+                    </div>
+                    <div class="row g-2 mt-2">
+                        <div class="col-3"><button class="btn btn-secondary w-100 calc-btn number" data-value="1">1</button></div>
+                        <div class="col-3"><button class="btn btn-secondary w-100 calc-btn number" data-value="2">2</button></div>
+                        <div class="col-3"><button class="btn btn-secondary w-100 calc-btn number" data-value="3">3</button></div>
+                        <div class="col-3"><button class="btn btn-warning w-100 calc-btn operator" data-value="+">+</button></div>
+                    </div>
+                     <div class="row g-2 mt-2">
+                        <div class="col-6"><button class="btn btn-secondary w-100 calc-btn number" data-value="0">0</button></div>
+                        <div class="col-3"><button class="btn btn-secondary w-100 calc-btn" data-value=".">.</button></div>
+                        <div class="col-3"><button class="btn btn-primary w-100 calc-btn" data-value="=">=</button></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html> 
