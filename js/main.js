@@ -2,17 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Highlight active navigation link
     const currentPage = window.location.pathname.split('/').pop(); // Gets filename like 'index.html'
 
-    if (currentPage === 'index.html' || currentPage === '') {
-        document.getElementById('nav-home')?.classList.add('active');
-    } else if (currentPage === 'calculator.html') {
-        document.getElementById('nav-calculator')?.classList.add('active');
-    } else if (currentPage === 'budget.html') {
-        document.getElementById('nav-budget')?.classList.add('active');
-    } else if (currentPage === 'apr_checker.html') {
-        document.getElementById('nav-apr')?.classList.add('active');
-    } else if (currentPage === 'tip_calculator.html') {
-        document.getElementById('nav-tip')?.classList.add('active');
-    }
+        if (currentPage === 'index.html' || currentPage === '') {        document.getElementById('nav-home')?.classList.add('active');    } else if (currentPage === 'calculator.html') {        document.getElementById('nav-calculator')?.classList.add('active');    } else if (currentPage === 'budget.html') {        document.getElementById('nav-budget')?.classList.add('active');    } else if (currentPage === 'apr_checker.html') {        document.getElementById('nav-apr')?.classList.add('active');    } else if (currentPage === 'tip_calculator.html') {        document.getElementById('nav-tip')?.classList.add('active');    } else if (currentPage === 'currency_exchange.html') {        document.getElementById('nav-currency')?.classList.add('active');    }
 
     // --- Dark Mode Toggle --- 
     const themeToggleBtn = document.getElementById('theme-toggle');

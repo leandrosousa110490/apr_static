@@ -2,6 +2,20 @@
 
 All notable changes to the Finance Tools project will be documented in this file.
 
+## [1.3.0] - 2024-06-01
+
+### Added
+- Currency Exchange tool:
+  - Convert between 200+ global currencies using live exchange rates
+  - Currency strength comparison with interactive chart
+  - Popular currency pair display
+  - Real-time data from fawazahmed0/exchange-api
+
+### Changed
+- Removed "Buy Me a Coffee" link from the top info bar
+- Simplified header section for cleaner user interface
+- Enhanced responsive design for better mobile experience
+
 ## [1.2.0] - 2024-05-09
 
 ### Added

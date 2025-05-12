@@ -29,14 +29,24 @@ A collection of interactive financial calculators and planning tools to help use
 - Split bills among multiple people
 - Quick select buttons for common tip percentages
 
+### Currency Exchange
+- Convert between 200+ global currencies using real-time exchange rates
+- Compare currency strength with interactive charts
+- View popular currency pair exchange rates
+- Data updated daily from reliable API sources
+
 ## Technologies Used
 - HTML5/CSS3/JavaScript
 - Bootstrap 5 for responsive design
 - Chart.js for data visualization
+- Live currency data from public APIs
 - Fully client-side (no server required)
 
 ## Usage
 Simply open the HTML files in a web browser. No installation or server required.
+
+## Deployment
+This project is deployed using GitHub Pages. Visit [www.simpleaprcheck.com](https://www.simpleaprcheck.com) to use these tools online.
 
 ## Browser Compatibility
 Works with all modern browsers including Chrome, Firefox, Safari, and Edge.
