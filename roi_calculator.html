@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Currency Exchange - Finance Tools</title>
+    <title>Investment ROI Calculator - Finance Tools</title>
     <!-- SEO Meta Tags -->
-    <meta name="description" content="Check real-time currency exchange rates and convert between over 200 global currencies with our free currency exchange calculator.">
-    <meta name="keywords" content="currency exchange, foreign exchange, forex, exchange rates, currency calculator, currency conversion, fx rates">
+    <meta name="description" content="Calculate the Return on Investment (ROI) and annualized ROI for your investments, including additional contributions and withdrawals.">
+    <meta name="keywords" content="roi calculator, return on investment, investment calculator, annualized roi, investment profit, financial calculator">
     <meta name="author" content="Finance Tools">
     <meta name="robots" content="index, follow">
-    
+
     <!-- Favicon Links -->
     <link rel="apple-touch-icon" sizes="180x180" href="static/favicon/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="static/favicon/favicon-32x32.png">
@@ -21,12 +21,12 @@
     <meta name="msapplication-config" content="static/favicon/browserconfig.xml">
     <!-- Theme Color -->
     <meta name="theme-color" content="#ffffff">
-    
+
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:title" content="Currency Exchange - Finance Tools">
-    <meta property="og:description" content="Check real-time currency exchange rates and convert between over 200 global currencies.">
-    
+    <meta property="og:title" content="Investment ROI Calculator - Finance Tools">
+    <meta property="og:description" content="Calculate ROI and annualized ROI for your investments, accounting for contributions and withdrawals.">
+
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
@@ -64,175 +64,102 @@
 
     <!-- Main Content -->
     <main class="container mt-4 flex-grow-1">
-        <div class="row">
-            <!-- Title Section -->
-            <div class="col-12 mb-4">
-                <h1 class="display-5 fw-bold"><i class="fas fa-exchange-alt"></i> Currency Exchange</h1>
-                <p class="lead">Convert between currencies and check exchange rates with historical data visualization.</p>
-                <div class="alert alert-info" role="alert">
-                    <i class="fas fa-info-circle me-2"></i>
-                    <span>Exchange rates are updated daily using free data from <a href="https://github.com/fawazahmed0/exchange-api" class="alert-link" target="_blank">fawazahmed0/exchange-api</a>.</span>
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <!-- Title Section -->
+                <div class="text-center mb-4">
+                    <h1 class="display-5 fw-bold"><i class="fas fa-chart-pie me-2"></i> Investment ROI Calculator</h1>
+                    <p class="lead">Calculate the return and annualized growth of your investments, including contributions and withdrawals.</p>
                 </div>
-            </div>
 
-            <!-- Currency Converter Section -->
-            <div class="col-lg-6 mb-4">
                 <div class="card shadow-sm">
                     <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0"><i class="fas fa-calculator me-2"></i>Currency Converter</h5>
+                        <h5 class="mb-0"><i class="fas fa-calculator me-2"></i>Enter Investment Details</h5>
                     </div>
                     <div class="card-body">
-                        <form id="currency-converter-form">
-                            <div class="row g-3 mb-3">
-                                <!-- Amount -->
-                                <div class="col-12">
-                                    <label for="amount" class="form-label">Amount</label>
+                        <form id="roi-form">
+                            <div class="row g-3">
+                                <!-- Initial Investment -->
+                                <div class="col-md-6">
+                                    <label for="initial-investment" class="form-label">Initial Investment Amount</label>
                                     <div class="input-group">
-                                        <input type="number" class="form-control" id="amount" value="1" min="0.01" step="0.01" required>
-                                        <div class="invalid-feedback" id="amountError"></div>
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" class="form-control" id="initial-investment" placeholder="e.g., 10000" min="0" step="any" required>
                                     </div>
+                                    <div class="invalid-feedback" id="initialInvestmentError"></div>
                                 </div>
-                                
-                                <!-- From Currency -->
-                                <div class="col-lg-6">
-                                    <label for="from-currency" class="form-label">From Currency</label>
-                                    <select class="form-select" id="from-currency" required>
-                                        <option value="usd" selected>USD - US Dollar</option>
-                                        <!-- Other currencies will be loaded dynamically -->
+
+                                <!-- Final Value of Investment -->
+                                <div class="col-md-6">
+                                    <label for="final-value" class="form-label">Final Value of Investment</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" class="form-control" id="final-value" placeholder="e.g., 15000" min="0" step="any" required>
+                                    </div>
+                                    <div class="invalid-feedback" id="finalValueError"></div>
+                                </div>
+
+                                <!-- Investment Duration -->
+                                <div class="col-md-6">
+                                    <label for="duration" class="form-label">Investment Duration</label>
+                                    <input type="number" class="form-control" id="duration" placeholder="e.g., 5" min="0.01" step="any" required>
+                                    <div class="invalid-feedback" id="durationError"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="duration-unit" class="form-label">Duration Unit</label>
+                                    <select class="form-select" id="duration-unit">
+                                        <option value="years" selected>Years</option>
+                                        <option value="months">Months</option>
                                     </select>
                                 </div>
-                                
-                                <!-- To Currency -->
-                                <div class="col-lg-6">
-                                    <label for="to-currency" class="form-label">To Currency</label>
-                                    <select class="form-select" id="to-currency" required>
-                                        <option value="eur" selected>EUR - Euro</option>
-                                        <!-- Other currencies will be loaded dynamically -->
-                                    </select>
-                                </div>
-                                
-                                <!-- Swap Button -->
-                                <div class="col-12 text-center">
-                                    <button type="button" id="swap-button" class="btn btn-outline-secondary">
-                                        <i class="fas fa-exchange-alt me-1"></i> Swap Currencies
+
+                                <!-- Additional Transactions Section -->
+                                <div class="col-12">
+                                    <h6 class="mt-3"><i class="fas fa-exchange-alt me-1"></i>Additional Transactions (Optional)</h6>
+                                    <p class="small text-muted">Add any contributions made to the investment or withdrawals taken from it during the investment period.</p>
+                                    <div id="transactions-container">
+                                        <!-- Transaction rows will be added here -->
+                                    </div>
+                                    <button type="button" class="btn btn-outline-success btn-sm mt-2" id="add-transaction-btn">
+                                        <i class="fas fa-plus me-1"></i> Add Transaction
                                     </button>
                                 </div>
                                 
-                                <!-- Submit Button -->
-                                <div class="col-12">
-                                    <button type="submit" class="btn btn-primary w-100">
-                                        <i class="fas fa-calculator me-1"></i> Convert
+                                <!-- Calculate Button -->
+                                <div class="col-12 mt-4">
+                                    <button type="submit" class="btn btn-primary w-100 btn-lg">
+                                        <i class="fas fa-calculator me-1"></i> Calculate ROI
                                     </button>
                                 </div>
                             </div>
                         </form>
-                        
+
+                        <!-- Error Message Area -->
+                        <div id="roi-error-message" class="alert alert-danger mt-3 d-none" role="alert"></div>
+
                         <!-- Results Panel -->
-                        <div id="conversion-result" class="mt-3 d-none">
+                        <div id="roi-results" class="mt-4 d-none">
+                            <h5 class="mb-3"><i class="fas fa-poll me-2"></i>Calculation Results</h5>
                             <div class="card bg-body-tertiary">
                                 <div class="card-body">
-                                    <h5 class="card-title" id="conversion-title">Conversion Result</h5>
-                                    <div class="d-flex justify-content-between">
-                                        <div>
-                                            <span id="from-amount" class="fs-4 fw-bold">1.00 USD</span>
-                                            <span class="d-block text-muted small" id="from-currency-name">United States Dollar</span>
+                                    <div class="row">
+                                        <div class="col-md-4 mb-3 mb-md-0">
+                                            <h6 class="text-muted">Net Profit (Absolute ROI)</h6>
+                                            <p class="fs-4 fw-bold mb-0" id="net-profit-result">-</p>
                                         </div>
-                                        <div class="text-center">
-                                            <i class="fas fa-equals text-muted"></i>
+                                        <div class="col-md-4 mb-3 mb-md-0">
+                                            <h6 class="text-muted">Total ROI</h6>
+                                            <p class="fs-4 fw-bold mb-0" id="total-roi-result">-</p>
                                         </div>
-                                        <div class="text-end">
-                                            <span id="to-amount" class="fs-4 fw-bold">0.93 EUR</span>
-                                            <span class="d-block text-muted small" id="to-currency-name">Euro</span>
+                                        <div class="col-md-4">
+                                            <h6 class="text-muted">Annualized ROI</h6>
+                                            <p class="fs-4 fw-bold mb-0" id="annualized-roi-result">-</p>
                                         </div>
                                     </div>
-                                    <div class="text-center mt-2 text-muted small">
-                                        <span>Exchange rate: <span id="exchange-rate">1 USD = 0.93 EUR</span></span><br>
-                                        <span>Last updated: <span id="last-updated">2024-05-17</span></span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Currency Strength Comparison Chart -->
-            <div class="col-lg-6 mb-4">
-                <div class="card shadow-sm">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0"><i class="fas fa-balance-scale me-2"></i>Currency Strength Comparison</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label for="base-currency" class="form-label">Base Currency</label>
-                            <select class="form-select" id="base-currency">
-                                <option value="usd" selected>USD - US Dollar</option>
-                                <option value="eur">EUR - Euro</option>
-                                <option value="gbp">GBP - British Pound</option>
-                                <option value="jpy">JPY - Japanese Yen</option>
-                                <option value="cad">CAD - Canadian Dollar</option>
-                                <option value="aud">AUD - Australian Dollar</option>
-                            </select>
-                        </div>
-                        <div id="strength-chart-container" style="height: 300px;">
-                            <canvas id="currency-strength-chart"></canvas>
-                        </div>
-                        <div id="chart-loading" class="text-center py-5">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </div>
-                            <p class="mt-2">Loading currency data...</p>
-                        </div>
-                        <div class="text-center mt-3 small text-muted">
-                            <p>Chart shows relative values against the selected base currency.<br>Higher values indicate stronger currencies.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Popular Currency Pairs -->
-            <div class="col-12 mb-4">
-                <div class="card shadow-sm">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0"><i class="fas fa-star me-2"></i>Popular Currency Pairs</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row g-3" id="popular-pairs">
-                            <!-- Popular currency pairs will be loaded dynamically -->
-                            <div class="col-md-4 col-lg-3">
-                                <div class="card h-100 border-0 shadow-sm">
-                                    <div class="card-body">
-                                        <h6 class="card-title">USD/EUR</h6>
-                                        <p class="card-text fs-5 fw-bold" id="usd-eur-rate">Loading...</p>
-                                        <p class="card-text text-muted small">US Dollar to Euro</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-4 col-lg-3">
-                                <div class="card h-100 border-0 shadow-sm">
-                                    <div class="card-body">
-                                        <h6 class="card-title">USD/GBP</h6>
-                                        <p class="card-text fs-5 fw-bold" id="usd-gbp-rate">Loading...</p>
-                                        <p class="card-text text-muted small">US Dollar to British Pound</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-4 col-lg-3">
-                                <div class="card h-100 border-0 shadow-sm">
-                                    <div class="card-body">
-                                        <h6 class="card-title">USD/JPY</h6>
-                                        <p class="card-text fs-5 fw-bold" id="usd-jpy-rate">Loading...</p>
-                                        <p class="card-text text-muted small">US Dollar to Japanese Yen</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-4 col-lg-3">
-                                <div class="card h-100 border-0 shadow-sm">
-                                    <div class="card-body">
-                                        <h6 class="card-title">EUR/GBP</h6>
-                                        <p class="card-text fs-5 fw-bold" id="eur-gbp-rate">Loading...</p>
-                                        <p class="card-text text-muted small">Euro to British Pound</p>
-                                    </div>
+                                    <hr>
+                                    <p class="small text-muted mb-0">
+                                        <strong>Note:</strong> Annualized ROI is the constant annual rate of return that would yield the same total ROI over the specified duration. Calculations involving additional contributions or withdrawals assume these transactions occurred evenly or do not precisely model the timing of cash flows for annualization, providing an estimated annualized return. For highly irregular cash flows, more advanced methods like IRR or TWRR might be needed for precise analysis.
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -271,7 +198,7 @@
                 </div>
                 <div class="col-lg-4">
                     <h5>Disclaimer</h5>
-                    <p class="small text-light">These calculators are for educational purposes only. Currency exchange rates are provided as a convenience, and may not be accurate for all transactions. Always check with your financial institution for actual rates.</p>
+                    <p class="small text-light">These calculators are for educational purposes only. Always consult with a qualified financial advisor before making investment decisions. ROI calculations, especially annualized figures with intermediate cash flows, are estimates.</p>
                 </div>
             </div>
             <hr class="my-3 border-secondary">
@@ -290,19 +217,16 @@
     <!-- Bootstrap JS Bundle (includes Popper) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
     <!-- General App JS -->
     <script src="js/main.js"></script>
 
-    <!-- Currency Exchange JS -->
-    <script src="js/currency_exchange.js"></script>
+    <!-- ROI Calculator JS -->
+    <script src="js/roi_calculator.js"></script>
     
     <!-- Dynamic Calculator JS -->
     <script src="js/dynamic_calculator.js"></script>
     
-    <!-- Dynamic Calculator Modal -->
+    <!-- Dynamic Calculator Modal (Copied from other pages for consistency) -->
     <div class="modal fade" id="dynamicCalculatorModal" tabindex="-1" aria-labelledby="dynamicCalculatorModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered calculator-modal-dialog">
             <div class="modal-content">
