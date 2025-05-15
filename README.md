@@ -35,6 +35,11 @@ A collection of interactive financial calculators and planning tools to help use
 - View popular currency pair exchange rates
 - Data updated daily from reliable API sources
 
+### Investment ROI Calculator
+- Calculate the profitability of an investment (Return on Investment)
+- Determine Net Profit, Total ROI (percentage), and Annualized ROI
+- Account for initial investment, final value, duration, and optional additional contributions or withdrawals over the investment period
+
 ## Technologies Used
 - HTML5/CSS3/JavaScript
 - Bootstrap 5 for responsive design

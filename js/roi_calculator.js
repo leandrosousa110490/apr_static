@@ -9,6 +9,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const totalRoiResultEl = document.getElementById('total-roi-result');
     const annualizedRoiResultEl = document.getElementById('annualized-roi-result');
 
+    const roiGrowthChartCanvas = document.getElementById('roi-growth-chart');
+    let roiGrowthChart = null;
+
     let transactionIdCounter = 0;
 
     // Function to add a new transaction row
@@ -171,9 +174,77 @@ document.addEventListener('DOMContentLoaded', () => {
             showError(null, "Annualized ROI cannot be calculated with the given inputs (e.g., negative effective principal or inconsistent values).");
         }
 
+        updateRoiGrowthChart(initialInvestment, finalValue, durationInYears, durationUnit);
+
         resultsDiv.classList.remove('d-none');
         resultsDiv.scrollIntoView({ behavior: 'smooth' });
     });
+
+    function updateRoiGrowthChart(initial, final, years, unit) {
+        const chartLabels = ['Start', 'End'];
+        const chartData = [initial, final];
+        
+        const data = {
+            labels: chartLabels,
+            datasets: [{
+                label: 'Investment Value',
+                data: chartData,
+                borderColor: '#0d6efd', // Bootstrap primary color
+                backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                fill: true,
+                tension: 0.1
+            }]
+        };
+
+        if (roiGrowthChart) {
+            roiGrowthChart.destroy();
+        }
+
+        roiGrowthChart = new Chart(roiGrowthChartCanvas, {
+            type: 'line',
+            data: data,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: false, // Allow y-axis to not start at zero for better visualization of changes
+                        title: {
+                            display: true,
+                            text: 'Investment Value ($)'
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return formatCurrency(value, false); // Use a modified formatCurrency for ticks
+                            }
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Time'
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += formatCurrency(context.parsed.y);
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
 
     function showError(inputId, message) {
         errorMessageDiv.classList.remove('d-none');
@@ -208,13 +279,17 @@ document.addEventListener('DOMContentLoaded', () => {
         errorMessageDiv.scrollIntoView({ behavior: 'smooth' });
     }
 
-    function formatCurrency(value) {
-        const formatter = new Intl.NumberFormat('en-US', {
+    function formatCurrency(value, useCurrencySymbol = true) {
+        const options = {
             style: 'currency',
             currency: 'USD',
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
-        });
+        };
+        if (!useCurrencySymbol) {
+            options.style = 'decimal';
+        }
+        const formatter = new Intl.NumberFormat('en-US', options);
         return formatter.format(value);
     }
 }); 
