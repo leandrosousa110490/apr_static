@@ -8,7 +8,10 @@ A collection of interactive financial calculators and planning tools to help use
 - Calculate monthly loan payments for mortgages, auto loans, and personal loans
 - View detailed amortization schedule showing principal and interest breakdown
 - Visualize payment breakdown with interactive charts
-- **NEW: Extra Payment Calculator**
+- **New:** Input upfront costs like Down Payment.
+- **New:** Add other costs like Taxes, Closing Costs, and Fees to the loan amount.
+- **Enhanced:** Amortization schedule can now display a full breakdown including P&I, extra payments, other monthly expenses (taxes, insurance, etc.), and total monthly outlay.
+- **Extra Payment Calculator**
   - See how extra payments reduce your loan term and save interest
   - Options for monthly extra payments, annual lump sums, or one-time payments
   - Compare bi-weekly vs monthly payment schedules

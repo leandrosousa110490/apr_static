@@ -64,6 +64,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const interestRateError = document.getElementById('interestRateError');
     const loanTermError = document.getElementById('loanTermError');
 
+    // New input fields for upfront and add-to-loan costs
+    const downPaymentInput = document.getElementById('down-payment');
+    const taxesLoanInput = document.getElementById('taxes-loan');
+    const closingCostsInput = document.getElementById('closing-costs');
+    const feesLoanInput = document.getElementById('fees-loan');
+
     let paymentChart = null;
     let amortizationChart = null;
     let payoffComparisonChart = null;
@@ -129,6 +135,16 @@ document.addEventListener('DOMContentLoaded', () => {
         return isValid;
     };
 
+    // --- Calculate Monthly Payment (Principal & Interest) ---
+    function calculateMonthlyPayment(principal, monthlyInterestRate, numberOfPayments) {
+        if (principal <= 0) return 0;
+        if (monthlyInterestRate === 0) {
+            return principal / numberOfPayments; // No interest, just divide principal by payments
+        }
+        // Standard formula for monthly payment
+        return principal * monthlyInterestRate * Math.pow(1 + monthlyInterestRate, numberOfPayments) / (Math.pow(1 + monthlyInterestRate, numberOfPayments) - 1);
+    }
+
     // --- Amortization Schedule Generation ---
     function generateAmortizationSchedule(principal, monthlyInterestRate, numberOfPayments, monthlyPayment) {
         let schedule = [];
@@ -168,18 +184,29 @@ document.addEventListener('DOMContentLoaded', () => {
         return schedule;
     }
 
-    function displayAmortizationSchedule(schedule) {
+    function displayAmortizationSchedule(schedule, totalMonthlyAdditionalExpenses = 0) {
         if (!amortizationScheduleDiv) return;
+        if (!schedule || schedule.length === 0) {
+            amortizationScheduleDiv.innerHTML = '<p class="text-center">No schedule data to display.</p>';
+            amortizationCard.classList.add('d-none');
+            return;
+        }
+
+        // Check if any entry has an extra payment to decide on showing the column
+        const hasExtraPayments = schedule.some(row => row.hasOwnProperty('extraPayment') && row.extraPayment > 0);
+        const showMonthlyExtras = totalMonthlyAdditionalExpenses > 0;
 
         let tableHTML = `
             <table class="table table-striped table-hover table-sm small">
                 <thead class="table-dark sticky-top">
                     <tr>
                         <th>Month</th>
-                        <th>Payment</th>
+                        <th>P&I Payment</th>
                         <th>Principal</th>
                         <th>Interest</th>
-                        ${schedule[0].hasOwnProperty('extraPayment') ? '<th>Extra Payment</th>' : ''}
+                        ${hasExtraPayments ? '<th>Extra Payment</th>' : ''}
+                        ${showMonthlyExtras ? '<th>Monthly Extras</th>' : ''}
+                        ${showMonthlyExtras ? '<th>Total Outlay</th>' : ''}
                         <th>Balance</th>
                     </tr>
                 </thead>
@@ -187,14 +214,23 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
 
         schedule.forEach(row => {
+            const pAndIPayment = row.payment || 0;
+            const principalPayment = row.principal || 0;
+            const interestPayment = row.interest || 0;
+            const extraPayment = (hasExtraPayments && row.extraPayment) ? row.extraPayment : 0;
+            const balance = row.balance || 0;
+            const totalOutlay = pAndIPayment + extraPayment + (showMonthlyExtras ? totalMonthlyAdditionalExpenses : 0);
+
             tableHTML += `
                 <tr>
                     <td>${row.month}</td>
-                    <td>$${row.payment.toFixed(2)}</td>
-                    <td>$${row.principal.toFixed(2)}</td>
-                    <td>$${row.interest.toFixed(2)}</td>
-                    ${row.hasOwnProperty('extraPayment') ? `<td>$${row.extraPayment.toFixed(2)}</td>` : ''}
-                    <td>$${row.balance.toFixed(2)}</td>
+                    <td>$${pAndIPayment.toFixed(2)}</td>
+                    <td>$${principalPayment.toFixed(2)}</td>
+                    <td>$${interestPayment.toFixed(2)}</td>
+                    ${hasExtraPayments ? `<td>$${extraPayment.toFixed(2)}</td>` : ''}
+                    ${showMonthlyExtras ? `<td>$${totalMonthlyAdditionalExpenses.toFixed(2)}</td>` : ''}
+                    ${showMonthlyExtras ? `<td>$${totalOutlay.toFixed(2)}</td>` : ''}
+                    <td>$${balance.toFixed(2)}</td>
                 </tr>
             `;
         });
@@ -548,118 +584,85 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Handle Form Submission ---
     if (calculatorForm) {
-        calculatorForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
+        calculatorForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+
             if (!validateInputs()) {
-                return; // Stop if validation fails
+                // Clear previous results if validation fails
+                resultDiv.classList.add('d-none');
+                amortizationCard.classList.add('d-none');
+                if (paymentChart) paymentChart.destroy();
+                if (amortizationChart) amortizationChart.destroy();
+                if (payoffComparisonChart) payoffComparisonChart.destroy();
+                return;
             }
-            
-            const principal = parseFloat(loanAmountInput.value);
+
+            let loanAmount = parseFloat(loanAmountInput.value);
             const annualInterestRate = parseFloat(interestRateInput.value);
             const loanTermYears = parseInt(loanTermInput.value);
+
+            // Get values from new input fields
+            const downPayment = parseFloat(downPaymentInput.value) || 0;
+            const taxesLoan = parseFloat(taxesLoanInput.value) || 0;
+            const closingCosts = parseFloat(closingCostsInput.value) || 0;
+            const feesLoan = parseFloat(feesLoanInput.value) || 0;
+
+            // Adjust loan amount
+            let actualLoanAmount = loanAmount; // Original amount entered by user
+            if (downPayment > actualLoanAmount) {
+                // Handle case where down payment is more than loan amount (show error or cap)
+                // For now, let's assume loan amount becomes 0, or show an error.
+                // This scenario should ideally be validated.
+                // For simplicity, let's cap down payment at loan amount for calculation.
+                // Or better, validate this upfront or provide feedback.
+                // For now, just proceed, this implies the user gets money back or a 0 loan.
+                // Let's adjust the principal to be at least 0.
+                 alert("Down payment cannot exceed the loan amount. Please adjust your inputs.");
+                 return; // Stop calculation
+            }
+
+            let principal = actualLoanAmount - downPayment;
+            principal = principal + taxesLoan + closingCosts + feesLoan;
             
+            // Ensure principal is not negative after adjustments
+            if (principal < 0) {
+                principal = 0; // Or handle as an error
+            }
+
             const monthlyInterestRate = (annualInterestRate / 100) / 12;
             const numberOfPayments = loanTermYears * 12;
             
-            let monthlyPayment = 0;
+            const baseMonthlyPayment = calculateMonthlyPayment(principal, monthlyInterestRate, numberOfPayments);
             
-            // Calculate monthly payment (principal and interest)
-            if (annualInterestRate === 0) {
-                // Handle 0% interest case
-                monthlyPayment = principal / numberOfPayments;
-            } else {
-                // Standard formula for monthly payment
-                monthlyPayment = principal * monthlyInterestRate * Math.pow(1 + monthlyInterestRate, numberOfPayments) / (Math.pow(1 + monthlyInterestRate, numberOfPayments) - 1);
+            if (isNaN(baseMonthlyPayment) || !isFinite(baseMonthlyPayment)) {
+                monthlyPaymentSpan.textContent = 'N/A';
+                totalPrincipalSpan.textContent = 'N/A';
+                totalInterestSpan.textContent = 'N/A';
+                if(paymentChart) paymentChart.destroy();
+                resultDiv.classList.remove('d-none'); // Show result div to display N/A
+                amortizationCard.classList.add('d-none');
+                if (additionalExpensesSummary) additionalExpensesSummary.classList.add('d-none');
+                if (extraPaymentsSummary) extraPaymentsSummary.classList.add('d-none');
+                calculationNote.textContent = 'Please check your inputs. Calculation resulted in an invalid value.';
+                return;
             }
-            
-            // Calculate additional expenses if included
-            let additionalMonthlyExpenses = 0;
-            let monthlyTax = 0;
-            let monthlyInsurance = 0;
-            let monthlyPmi = 0;
-            let monthlyHoa = 0;
-            let monthlyOther = 0;
-            
-            if (includeExtrasCheckbox && includeExtrasCheckbox.checked) {
-                // Calculate monthly property tax
-                if (propertyTaxInput && propertyTaxInput.value) {
-                    const annualTax = parseFloat(propertyTaxInput.value);
-                    monthlyTax = annualTax / 12;
-                    additionalMonthlyExpenses += monthlyTax;
-                }
-                
-                // Calculate monthly insurance
-                if (insuranceInput && insuranceInput.value) {
-                    const annualInsurance = parseFloat(insuranceInput.value);
-                    monthlyInsurance = annualInsurance / 12;
-                    additionalMonthlyExpenses += monthlyInsurance;
-                }
-                
-                // Add PMI if provided
-                if (pmiInput && pmiInput.value) {
-                    monthlyPmi = parseFloat(pmiInput.value);
-                    additionalMonthlyExpenses += monthlyPmi;
-                }
-                
-                // Add HOA fees if provided
-                if (hoaInput && hoaInput.value) {
-                    monthlyHoa = parseFloat(hoaInput.value);
-                    additionalMonthlyExpenses += monthlyHoa;
-                }
-                
-                // Add other expenses if provided
-                if (otherExpensesInput && otherExpensesInput.value) {
-                    monthlyOther = parseFloat(otherExpensesInput.value);
-                    additionalMonthlyExpenses += monthlyOther;
-                }
-                
-                // Show additional expenses in the summary
-                if (additionalExpensesSummary) {
-                    additionalExpensesSummary.classList.remove('d-none');
-                }
-                
-                // Update the expense spans
-                if (monthlyTaxSpan) monthlyTaxSpan.textContent = monthlyTax.toFixed(2);
-                if (monthlyInsuranceSpan) monthlyInsuranceSpan.textContent = monthlyInsurance.toFixed(2);
-                if (monthlyPmiSpan) monthlyPmiSpan.textContent = monthlyPmi.toFixed(2);
-                if (monthlyHoaSpan) monthlyHoaSpan.textContent = monthlyHoa.toFixed(2);
-                if (monthlyOtherSpan) monthlyOtherSpan.textContent = monthlyOther.toFixed(2);
-                
-                // Update calculation note
-                if (calculationNote) {
-                    calculationNote.textContent = 'Calculation includes principal, interest, and all additional expenses.';
-                }
-            } else {
-                // Hide additional expenses in the summary
-                if (additionalExpensesSummary) {
-                    additionalExpensesSummary.classList.add('d-none');
-                }
-                
-                // Update calculation note
-                if (calculationNote) {
-                    calculationNote.textContent = 'Calculation includes principal and interest only. It does not include taxes, insurance, or other expenses.';
-                }
-            }
-            
-            const totalMonthlyPayment = monthlyPayment + additionalMonthlyExpenses;
-            
-            // Update the payment result
-            if (monthlyPaymentSpan) monthlyPaymentSpan.textContent = monthlyPayment.toFixed(2);
-            if (totalMonthlyPaymentSpan) totalMonthlyPaymentSpan.textContent = totalMonthlyPayment.toFixed(2);
-            
-            // Generate standard amortization schedule
-            const standardSchedule = generateAmortizationSchedule(principal, monthlyInterestRate, numberOfPayments, monthlyPayment);
-            
-            // Calculate total interest for standard schedule
-            const standardTotalInterest = standardSchedule.reduce((total, payment) => total + payment.interest, 0);
-            
-            // Total amounts over the life of the loan
-            if (totalPrincipalSpan) totalPrincipalSpan.textContent = principal.toFixed(2);
+
+            monthlyPaymentSpan.textContent = baseMonthlyPayment.toFixed(2);
+            totalPrincipalSpan.textContent = principal.toFixed(2); // Display the final calculated principal
+
+            // Generate the standard amortization schedule (without any extra payments)
+            // This will serve as the baseline for comparisons.
+            const standardScheduleWithoutExtras = generateAmortizationSchedule(principal, monthlyInterestRate, numberOfPayments, baseMonthlyPayment);
+            const standardTotalInterest = standardScheduleWithoutExtras.reduce((total, payment) => total + payment.interest, 0);
+            // Get the term in months from the last payment's month property
+            const standardTermInMonths = standardScheduleWithoutExtras.length > 0 ? standardScheduleWithoutExtras[standardScheduleWithoutExtras.length - 1].month : 0;
+
+            // Update total interest span with standard total interest initially
             if (totalInterestSpan) totalInterestSpan.textContent = standardTotalInterest.toFixed(2);
-            
-            // Handle extra payments if included
-            let acceleratedSchedule = standardSchedule;
+
+            let finalScheduleToDisplay = standardScheduleWithoutExtras;
+            let finalTotalInterest = standardTotalInterest;
+            let finalTermInMonths = standardTermInMonths;
             
             if (includeExtraPaymentsCheckbox && includeExtraPaymentsCheckbox.checked) {
                 // Get extra payment values
@@ -667,123 +670,123 @@ document.addEventListener('DOMContentLoaded', () => {
                 const extraAnnual = parseFloat(extraAnnualInput.value) || 0;
                 const oneTimeAmount = parseFloat(extraOneTimeInput.value) || 0;
                 const oneTimeMonth = parseInt(oneTimeMonthInput.value) || 1;
-                const paymentSchedule = paymentScheduleSelect.value;
+                const paymentScheduleType = paymentScheduleSelect.value; // Renamed from paymentSchedule to avoid conflict
                 
-                // Generate accelerated schedule with extra payments
                 const extraPayments = {
                     extraMonthly: extraMonthly,
                     extraAnnual: extraAnnual,
                     oneTimeAmount: oneTimeAmount,
                     oneTimeMonth: oneTimeMonth,
-                    paymentSchedule: paymentSchedule
+                    paymentSchedule: paymentScheduleType // Use the renamed variable
                 };
                 
                 const acceleratedSchedule = generateAmortizationWithExtraPayments(
                     principal, 
                     monthlyInterestRate, 
-                    numberOfPayments, 
-                    monthlyPayment, 
+                    numberOfPayments, // Original number of payments for reference, function might terminate earlier
+                    baseMonthlyPayment, 
                     extraPayments
                 );
                 
-                // Calculate accelerated totals
-                const acceleratedTotalPayments = acceleratedSchedule.reduce((sum, payment) => sum + payment.payment + payment.extraPayment, 0);
-                const acceleratedTotalInterest = acceleratedSchedule.reduce((sum, payment) => sum + payment.interest, 0);
-                const timeSavedMonths = standardSchedule.length - acceleratedSchedule.length;
-                const interestSaved = standardTotalInterest - acceleratedTotalInterest;
+                finalScheduleToDisplay = acceleratedSchedule; 
+                finalTotalInterest = acceleratedSchedule.reduce((sum, payment) => sum + payment.interest, 0);
+                // Get the accelerated term in months from the last payment's month property
+                finalTermInMonths = acceleratedSchedule.length > 0 ? acceleratedSchedule[acceleratedSchedule.length - 1].month : 0;
                 
-                // Calculate savings percentage
-                const savingsPercentage = (interestSaved / standardTotalInterest) * 100;
+                if (totalInterestSpan) totalInterestSpan.textContent = finalTotalInterest.toFixed(2);
+
+                const timeSavedMonths = standardTermInMonths - finalTermInMonths;
+                const interestSaved = standardTotalInterest - finalTotalInterest;
+                
+                const savingsPercentage = standardTotalInterest > 0 ? (interestSaved / standardTotalInterest) * 100 : 0;
                 
                 // Update comparison display values
-                if (standardTermSpan) standardTermSpan.textContent = (standardSchedule.length / 12).toFixed(1);
-                if (acceleratedTermSpan) acceleratedTermSpan.textContent = (acceleratedSchedule.length / 12).toFixed(1);
+                if (standardTermSpan) standardTermSpan.textContent = (standardTermInMonths / 12).toFixed(1);
+                if (acceleratedTermSpan) acceleratedTermSpan.textContent = (finalTermInMonths / 12).toFixed(1);
                 if (standardInterestSpan) standardInterestSpan.textContent = standardTotalInterest.toFixed(2);
-                if (acceleratedInterestSpan) acceleratedInterestSpan.textContent = acceleratedTotalInterest.toFixed(2);
-                if (timeSavedSpan) timeSavedSpan.textContent = `${Math.floor(timeSavedMonths / 12)} years, ${timeSavedMonths % 12} months`;
+                if (acceleratedInterestSpan) acceleratedInterestSpan.textContent = finalTotalInterest.toFixed(2);
+                
+                if (timeSavedSpan) {
+                    const yearsSaved = Math.floor(timeSavedMonths / 12);
+                    const monthsSaved = timeSavedMonths % 12;
+                    timeSavedSpan.textContent = `${yearsSaved} years, ${monthsSaved} months`;
+                }
                 if (interestSavedSpan) interestSavedSpan.textContent = interestSaved.toFixed(2);
                 
-                // Update progress bar
                 if (savingsProgressBar && savingsPercentageSpan) {
-                    savingsProgressBar.style.width = `${Math.min(savingsPercentage, 100)}%`;
+                    savingsProgressBar.style.width = `${Math.max(0, Math.min(savingsPercentage, 100)).toFixed(2)}%`;
                     savingsPercentageSpan.textContent = `${savingsPercentage.toFixed(1)}%`;
                 }
                 
-                // Display extra payments comparison chart
-                displayPayoffComparisonChart(standardSchedule, acceleratedSchedule);
-                
-                // Display amortization schedule with extra payments
-                displayAmortizationSchedule(acceleratedSchedule);
-                
-                // Show extra payments summary section
-                if (extraPaymentsSummary) extraPaymentsSummary.classList.remove('d-none');
+                displayPayoffComparisonChart(standardScheduleWithoutExtras, acceleratedSchedule);
+                extraPaymentsSummary.classList.remove('d-none');
             } else {
-                // Just show regular amortization schedule
-                displayAmortizationSchedule(standardSchedule);
+                // If not including extra payments, ensure standard values are shown/reset
+                finalTermInMonths = standardTermInMonths; // Ensure finalTermInMonths reflects standard term here
+                if (standardTermSpan) standardTermSpan.textContent = (standardTermInMonths / 12).toFixed(1);
+                if (standardInterestSpan) standardInterestSpan.textContent = standardTotalInterest.toFixed(2);
+                // Clear accelerated specific fields if they were previously shown
+                if (acceleratedTermSpan) acceleratedTermSpan.textContent = "N/A";
+                if (acceleratedInterestSpan) acceleratedInterestSpan.textContent = "N/A";
+                if (timeSavedSpan) timeSavedSpan.textContent = "0 years, 0 months";
+                if (interestSavedSpan) interestSavedSpan.textContent = "0.00";
+                if (savingsProgressBar) savingsProgressBar.style.width = '0%';
+                if (savingsPercentageSpan) savingsPercentageSpan.textContent = '0%';
                 
-                // Hide extra payments summary
-                if (extraPaymentsSummary) extraPaymentsSummary.classList.add('d-none');
+                if (payoffComparisonChart) payoffComparisonChart.destroy(); // Destroy chart if extras are unchecked
+
+                extraPaymentsSummary.classList.add('d-none');
             }
             
-            // Process additional expenses if checked
+            let totalMonthlyAdditionalExpenses = 0; // Initialize for clarity
+            let lifetimeAdditionalExpenses = 0; 
+
             if (includeExtrasCheckbox && includeExtrasCheckbox.checked) {
-                // Get expenses
-                const monthlyPropertyTax = parseFloat(propertyTaxInput.value) / 12 || 0;
-                const monthlyInsurance = parseFloat(insuranceInput.value) / 12 || 0;
+                const monthlyPropertyTax = (parseFloat(propertyTaxInput.value) || 0) / 12;
+                const monthlyInsurance = (parseFloat(insuranceInput.value) || 0) / 12;
                 const monthlyPmi = parseFloat(pmiInput.value) || 0;
                 const monthlyHoa = parseFloat(hoaInput.value) || 0;
                 const monthlyOther = parseFloat(otherExpensesInput.value) || 0;
                 
-                // Calculate total monthly payment with additional expenses
-                const totalMonthlyExpenses = monthlyPropertyTax + monthlyInsurance + monthlyPmi + monthlyHoa + monthlyOther;
-                const totalMonthlyPayment = monthlyPayment + totalMonthlyExpenses;
+                const totalMonthlyAdditionalExpenses = monthlyPropertyTax + monthlyInsurance + monthlyPmi + monthlyHoa + monthlyOther;
+                const totalOverallMonthlyPayment = baseMonthlyPayment + totalMonthlyAdditionalExpenses;
                 
-                // Update display values
                 monthlyTaxSpan.textContent = monthlyPropertyTax.toFixed(2);
                 monthlyInsuranceSpan.textContent = monthlyInsurance.toFixed(2);
                 monthlyPmiSpan.textContent = monthlyPmi.toFixed(2);
                 monthlyHoaSpan.textContent = monthlyHoa.toFixed(2);
                 monthlyOtherSpan.textContent = monthlyOther.toFixed(2);
-                totalMonthlyPaymentSpan.textContent = totalMonthlyPayment.toFixed(2);
+                totalMonthlyPaymentSpan.textContent = totalOverallMonthlyPayment.toFixed(2);
                 
-                // Show additional expenses summary
                 additionalExpensesSummary.classList.remove('d-none');
+                calculationNote.textContent = 'Calculation includes principal, interest, and all additional monthly expenses.';
                 
-                // Update chart to include additional expenses
-                if (paymentChartCtx) {
-                    updatePaymentChart(principal, standardTotalInterest, totalMonthlyExpenses * numberOfPayments);
-                }
+                // Calculate lifetime additional expenses based on the final schedule's actual term in months
+                lifetimeAdditionalExpenses = totalMonthlyAdditionalExpenses * finalTermInMonths;
+
             } else {
-                // Hide additional expenses summary
                 additionalExpensesSummary.classList.add('d-none');
-                
-                // Update chart without additional expenses
-                if (paymentChartCtx) {
-                    updatePaymentChart(principal, standardTotalInterest, 0);
-                }
+                totalMonthlyPaymentSpan.textContent = baseMonthlyPayment.toFixed(2); // Show only P&I if no extras
+                calculationNote.textContent = 'Calculation includes principal and interest only.';
+                lifetimeAdditionalExpenses = 0;
             }
             
-            // Show results
             resultDiv.classList.remove('d-none');
             
-            // Update pie chart
+            // Update pie chart with potentially adjusted total interest and lifetime additional expenses
             if (paymentChartCtx) {
-                updatePaymentChart(principal, standardTotalInterest, additionalMonthlyExpenses * standardSchedule.length);
+                updatePaymentChart(principal, finalTotalInterest, lifetimeAdditionalExpenses);
             }
             
-            // Display amortization schedule (use the appropriate schedule)
-            displayAmortizationSchedule(includeExtraPaymentsCheckbox && includeExtraPaymentsCheckbox.checked ? acceleratedSchedule : standardSchedule);
+            displayAmortizationSchedule(finalScheduleToDisplay, totalMonthlyAdditionalExpenses);
+            displayAmortizationChart(finalScheduleToDisplay);
             
-            // Display amortization chart
-            displayAmortizationChart(includeExtraPaymentsCheckbox && includeExtraPaymentsCheckbox.checked ? acceleratedSchedule : standardSchedule);
-            
-            // Scroll to results
             resultDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
     }
 
     // --- Update Payment Breakdown Chart ---
-    function updatePaymentChart(principal, totalInterest, totalAdditionalExpenses) {
+    function updatePaymentChart(principal, totalInterest, totalLifetimeAdditionalExpenses) {
         if (!paymentChartCtx) return;
         
         // Destroy previous chart if it exists
@@ -810,9 +813,9 @@ document.addEventListener('DOMContentLoaded', () => {
         );
         
         // Add additional expenses if included
-        if (includeExtrasCheckbox && includeExtrasCheckbox.checked && totalAdditionalExpenses > 0) {
+        if (totalLifetimeAdditionalExpenses > 0) { // Check against the lifetime value
             labels.push('Additional Expenses');
-            data.push(totalAdditionalExpenses);
+            data.push(totalLifetimeAdditionalExpenses); // Use the lifetime value
             backgroundColor.push('rgba(75, 192, 192, 0.7)'); // Teal for additional expenses
         }
         

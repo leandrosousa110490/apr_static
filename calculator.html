@@ -99,6 +99,47 @@
                              </div>
                         </div>
                     </div>
+
+                    <!-- New Upfront and Add-to-Loan Expenses -->
+                    <div class="row g-3 mt-1">
+                        <h5 class="mt-3">Optional Upfront & Add-to-Loan Costs</h5>
+                        <div class="col-md-3">
+                            <label for="down-payment" class="form-label">Down Payment ($)</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-hand-holding-usd"></i></span>
+                                <input type="number" class="form-control" id="down-payment" placeholder="e.g., 5000" step="0.01" min="0">
+                                <div class="invalid-feedback" id="downPaymentError"></div>
+                            </div>
+                            <div class="form-text">Subtracted from loan amount.</div>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="taxes-loan" class="form-label">Taxes ($)</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-file-invoice-dollar"></i></span>
+                                <input type="number" class="form-control" id="taxes-loan" placeholder="e.g., 1500" step="0.01" min="0">
+                                <div class="invalid-feedback" id="taxesLoanError"></div>
+                            </div>
+                             <div class="form-text">Added to loan amount.</div>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="closing-costs" class="form-label">Closing Costs ($)</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-signature"></i></span>
+                                <input type="number" class="form-control" id="closing-costs" placeholder="e.g., 2000" step="0.01" min="0">
+                                <div class="invalid-feedback" id="closingCostsError"></div>
+                            </div>
+                             <div class="form-text">Added to loan amount.</div>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="fees-loan" class="form-label">Other Fees ($)</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-money-bill-alt"></i></span>
+                                <input type="number" class="form-control" id="fees-loan" placeholder="e.g., 500" step="0.01" min="0">
+                                <div class="invalid-feedback" id="feesLoanError"></div>
+                            </div>
+                             <div class="form-text">Added to loan amount.</div>
+                        </div>
+                    </div>
                     
                     <!-- Optional Expenses Section -->
                     <div class="mt-3">

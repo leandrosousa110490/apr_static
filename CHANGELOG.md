@@ -2,6 +2,17 @@
 
 All notable changes to the Finance Tools project will be documented in this file.
 
+## [1.4.0] - YYYY-MM-DD <!-- Replace with current date -->
+
+### Added
+- Loan Calculator: Added fields for Down Payment (subtracted from loan amount).
+- Loan Calculator: Added fields for Taxes, Closing Costs, and Fees (added to loan amount).
+
+### Changed
+- Loan Calculator: Amortization schedule now optionally displays "Monthly Extras" (taxes, insurance, PMI, HOA, other) and "Total Monthly Outlay" if these additional expenses are included by the user.
+- Loan Calculator: Refined calculations for loan term and savings when extra payments (including bi-weekly) are made, ensuring accurate reflection of the loan's actual duration.
+- Loan Calculator: Improved accuracy of lifetime additional expenses calculation for the payment breakdown pie chart, reflecting the actual loan term.
+
 ## [1.3.0] - 2024-06-01
 
 ### Added
